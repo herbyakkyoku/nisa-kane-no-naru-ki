@@ -159,19 +159,32 @@
         document.getElementById('settings-modal').classList.remove('hidden');
     });
 
-    document.getElementById('save-settings').addEventListener('click', async () => {
-        const monthly = parseInt(document.getElementById('set-monthly').value);
-        const initial = parseInt(document.getElementById('set-initial').value);
+        document.getElementById('save-settings').addEventListener('click', async () => {
+        const monthly = parseInt(document.getElementById('set-monthly').value) || 0;
+        const initial = parseInt(document.getElementById('set-initial').value) || 0;
         const type = document.getElementById('set-type').value;
 
-        await update(ref(db, 'users/' + currentUser.uid), {
-            monthlyAmount: monthly,
-            initialAmount: initial,
-            investmentType: type
-        });
-        document.getElementById('settings-modal').classList.add('hidden');
-        loadUserData();
+        try {
+            // Firebaseへ保存
+            await update(ref(db, 'users/' + currentUser.uid), {
+                monthlyAmount: monthly,
+                initialAmount: initial,
+                investmentType: type
+            });
+            
+            // 保存が終わったらモーダルを隠す
+            document.getElementById('settings-modal').classList.add('hidden');
+            
+            // 最新のデータを再読み込みして画面を更新
+            await loadUserData();
+            
+            alert("設定を保存しました！");
+        } catch (error) {
+            console.error("保存エラー:", error);
+            alert("保存に失敗しました。コンソールを確認してください。");
+        }
     });
+
 
     // ログイン処理
     document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
