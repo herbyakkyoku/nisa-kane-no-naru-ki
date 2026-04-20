@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カネノナルキ - NISA握力養成所</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #333; }
-        .app-container { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
+        .app-container { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; margin: 20px; }
         .status-header { font-size: 0.9rem; color: #666; margin-bottom: 1rem; }
         #tree-display { font-size: 80px; margin: 20px 0; transition: transform 0.3s ease; }
         .stats { margin: 1.5rem 0; }
@@ -17,6 +17,11 @@
         .login-btn { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
         .hidden { display: none; }
         .counter-footer { margin-top: 1.5rem; font-size: 0.8rem; color: #aaa; }
+        
+        /* 管理者用スタイル */
+        #admin-panel { margin-top: 20px; padding: 15px; border: 2px dashed #ff7675; border-radius: 10px; background: #fff5f5; }
+        .admin-input { width: 60px; padding: 5px; font-size: 1rem; text-align: center; }
+        .admin-btn { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -39,6 +44,15 @@
             <p id="message">読み込み中...</p>
         </div>
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
+        
+        <!-- 管理者パネル（初期は隠れている） -->
+        <div id="admin-panel" class="hidden">
+            <p style="font-weight: bold; color: #ff7675; font-size: 0.8rem;">管理者モード</p>
+            <p style="font-size: 0.7rem;">今日の指数騰落率を入力</p>
+            <input type="number" id="market-rate" class="admin-input" step="0.1" value="0.0"> %
+            <button id="update-market-btn" class="admin-btn">更新</button>
+        </div>
+
         <div class="counter-footer">現在、全国で <strong id="online-users">3,421</strong> 人が修行中</div>
     </div>
 </div>
@@ -46,7 +60,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -64,7 +78,26 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    const dailyProfit = 364;
+    let currentMarketRate = 0; // 今日の騰落率
+
+    // 1. 市場データをリアルタイムで監視（これが更新されると全員の表示が変わる）
+    onValue(ref(db, 'market/todayRate'), (snapshot) => {
+        currentMarketRate = snapshot.val() || 0;
+        if (currentUser) loadUserData(); 
+    });
+
+    // 2. URLの末尾が ?admin=1234 だったら管理者パネルを出す
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === '1234') { // 1234は好きな数字に変えてOK
+        document.getElementById('admin-panel').classList.remove('hidden');
+    }
+
+    // 管理者ボタンの処理
+    document.getElementById('update-market-btn').addEventListener('click', async () => {
+        const rate = parseFloat(document.getElementById('market-rate').value);
+        await set(ref(db, 'market/todayRate'), rate);
+        alert("市場データを更新しました！");
+    });
 
     document.getElementById('btn-login').addEventListener('click', () => {
         signInWithPopup(auth, provider).catch(err => console.error(err));
@@ -103,13 +136,16 @@
             days: currentDays,
             lastPressed: now
         });
-        
         updateUI(currentDays, now);
     });
 
     function updateUI(days, lastPressed) {
         document.getElementById('day-count').innerText = days;
-        document.getElementById('saved-amount').innerText = (days * dailyProfit).toLocaleString();
+        
+        // 【計算式】 継続日数 × 364円 に 今日の騰落率を掛ける（少しリアルに）
+        const baseAmount = days * 364;
+        const adjustedAmount = Math.floor(baseAmount * (1 + currentMarketRate / 100));
+        document.getElementById('saved-amount').innerText = adjustedAmount.toLocaleString();
         
         const today = new Date().toDateString();
         if (lastPressed === today) {
@@ -117,17 +153,19 @@
             document.getElementById('hold-btn').innerText = "また明日お会いしましょう";
             document.getElementById('message').innerText = "今日の修行は完了です！";
         } else {
-            document.getElementById('message').innerText = "将来の自分を守りましょう";
+            document.getElementById('message').innerText = currentMarketRate >= 0 
+                ? "市場は好調です！守護額も増えています。" 
+                : "市場は嵐ですが、木は耐えています。";
             document.getElementById('hold-btn').disabled = false;
             document.getElementById('hold-btn').innerText = "今日も売らなかった！";
         }
 
         const tree = document.getElementById('tree-display');
         if (days === 0) tree.innerText = '🌱';
-        if (days >= 1) tree.innerText = '🌿';
-        if (days >= 3) tree.innerText = '🪴';
-        if (days >= 7) tree.innerText = '🌳';
-        if (days >= 10) tree.innerText = '🌸';
+        else if (days >= 1 && days < 3) tree.innerText = '🌿';
+        else if (days >= 3 && days < 7) tree.innerText = '🪴';
+        else if (days >= 7 && days < 10) tree.innerText = '🌳';
+        else if (days >= 10) tree.innerText = '🌸';
     }
 </script>
 </body>
