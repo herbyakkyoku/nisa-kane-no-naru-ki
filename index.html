@@ -21,10 +21,9 @@
         .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
         
         .login-btn { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-        
-        /* 重要：全角スペースを排除したhidden設定 */
-        .hidden { display: none !important; }
+  .hidden { display: none !important; }
 
+        
         /* モーダル（設定画面） */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: white; padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; text-align: left; }
@@ -158,14 +157,10 @@
             document.getElementById('set-initial').value = userData.initialAmount || 0;
             document.getElementById('set-type').value = userData.investmentType || 'sp500';
         }
-        // 直接スタイルもリセットして表示
-        const modal = document.getElementById('settings-modal');
-        modal.style.display = 'flex'; 
-        modal.classList.remove('hidden');
+        document.getElementById('settings-modal').classList.remove('hidden');
     });
 
-    // 設定の保存
-    document.getElementById('save-settings').addEventListener('click', async () => {
+                document.getElementById('save-settings').addEventListener('click', async () => {
         const monthly = parseInt(document.getElementById('set-monthly').value) || 0;
         const initial = parseInt(document.getElementById('set-initial').value) || 0;
         const type = document.getElementById('set-type').value;
@@ -177,12 +172,13 @@
                 investmentType: type
             });
             
-            // モーダルを確実に隠す
+            // 【重要】クラスの追加だけでなく、直接スタイルを消す命令を追加
             const modal = document.getElementById('settings-modal');
+            modal.style.display = 'none'; // これで物理的に消します
             modal.classList.add('hidden');
-            modal.style.display = 'none';
             
             await loadUserData();
+            
             alert("設定を保存しました！");
             
         } catch (error) {
@@ -190,6 +186,9 @@
             alert("保存に失敗しました。");
         }
     });
+
+
+
 
     // ログイン処理
     document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
@@ -222,6 +221,9 @@
         document.getElementById('day-count').innerText = days;
         document.getElementById('display-type').innerText = userData.investmentType === 'sp500' ? '🇺🇸 S&P500' : '🌍 オルカン';
 
+        // 【新ロジック】
+        // 1日の積立額 = 月額 / 30
+        // 現在の資産 = (元本 + (1日の積立額 * 継続日数)) * (1 + 市場騰落率/100)
         const dailyRate = (userData.monthlyAmount || 0) / 30;
         const currentRate = marketRates[userData.investmentType] || 0;
         const base = (userData.initialAmount || 0) + (dailyRate * days);
@@ -231,10 +233,12 @@
         const container = document.getElementById('saved-amount-container');
         display.innerText = total.toLocaleString();
 
+        // 色分け
         if (currentRate > 0) container.style.color = "#2ecc71";
         else if (currentRate < 0) container.style.color = "#e74c3c";
         else container.style.color = "#333";
 
+        // メッセージとボタン制御
         const today = new Date().toDateString();
         if (userData.lastPressed === today) {
             document.getElementById('hold-btn').disabled = true;
