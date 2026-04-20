@@ -159,31 +159,34 @@
         document.getElementById('settings-modal').classList.remove('hidden');
     });
 
-        document.getElementById('save-settings').addEventListener('click', async () => {
+            document.getElementById('save-settings').addEventListener('click', async () => {
         const monthly = parseInt(document.getElementById('set-monthly').value) || 0;
         const initial = parseInt(document.getElementById('set-initial').value) || 0;
         const type = document.getElementById('set-type').value;
 
         try {
-            // Firebaseへ保存
+            // 1. まずFirebaseに保存
             await update(ref(db, 'users/' + currentUser.uid), {
                 monthlyAmount: monthly,
                 initialAmount: initial,
                 investmentType: type
             });
             
-            // 保存が終わったらモーダルを隠す
+            // 2. 保存が完了したら、即座に設定画面（モーダル）を隠す
             document.getElementById('settings-modal').classList.add('hidden');
             
-            // 最新のデータを再読み込みして画面を更新
+            // 3. メイン画面の数字を最新の状態に更新
             await loadUserData();
             
+            // 4. 最後に完了報告（OKを押すとメイン画面が既に見えている状態になります）
             alert("設定を保存しました！");
+            
         } catch (error) {
             console.error("保存エラー:", error);
-            alert("保存に失敗しました。コンソールを確認してください。");
+            alert("保存に失敗しました。");
         }
     });
+
 
 
     // ログイン処理
