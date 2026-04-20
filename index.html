@@ -10,7 +10,7 @@
         .status-header { font-size: 0.9rem; color: #666; margin-bottom: 1rem; }
         #tree-display { font-size: 80px; margin: 20px 0; transition: transform 0.3s ease; }
         .stats { margin: 1.5rem 0; }
-        .stats h2 { margin: 0; font-size: 2rem; color: #2ecc71; }
+        .stats h2 { margin: 0; font-size: 2rem; transition: color 0.3s; }
         .stats p { margin: 5px 0; font-size: 0.9rem; color: #888; }
         .hold-button { background-color: #2ecc71; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: all 0.2s; }
         .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
@@ -20,7 +20,7 @@
         
         /* 管理者用スタイル */
         #admin-panel { margin-top: 20px; padding: 15px; border: 2px dashed #ff7675; border-radius: 10px; background: #fff5f5; }
-        .admin-input { width: 60px; padding: 5px; font-size: 1rem; text-align: center; }
+        .admin-input { width: 80px; padding: 5px; font-size: 1rem; text-align: center; }
         .admin-btn { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
@@ -40,18 +40,15 @@
         <div id="tree-display">🌱</div>
         <div class="stats">
             <p>将来の守護額（推定）</p>
-            <h2>¥<span id="saved-amount">0</span></h2>
+            <h2 id="saved-amount-container">¥<span id="saved-amount">0</span></h2>
             <p id="message">読み込み中...</p>
         </div>
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
         
-        <!-- 管理者パネル（初期は隠れている） -->
         <div id="admin-panel" class="hidden">
             <p style="font-weight: bold; color: #ff7675; font-size: 0.8rem;">管理者モード</p>
-            <p style="font-size: 0.7rem;">今日の指数騰落率を入力</p>
-            <!-- 管理者パネルの入力欄を以下に書き換え -->
-<input type="number" id="market-rate" class="admin-input" step="0.01" value="0.00"> %
-
+            <p style="font-size: 0.7rem;">今日の騰落率を入力 (例: 1.25 や -2.30)</p>
+            <input type="number" id="market-rate" class="admin-input" step="0.01" value="0.00"> %
             <button id="update-market-btn" class="admin-btn">更新</button>
         </div>
 
@@ -80,25 +77,28 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    let currentMarketRate = 0; // 今日の騰落率
+    let currentMarketRate = 0;
 
-    // 1. 市場データをリアルタイムで監視（これが更新されると全員の表示が変わる）
+    // 市場データのリアルタイム監視
     onValue(ref(db, 'market/todayRate'), (snapshot) => {
         currentMarketRate = snapshot.val() || 0;
+        document.getElementById('market-rate').value = currentMarketRate; // 入力欄にも反映
         if (currentUser) loadUserData(); 
     });
 
-    // 2. URLの末尾が ?admin=1234 だったら管理者パネルを出す
+    // 管理者モード判定 (?admin=1234)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === '1234') { // 1234は好きな数字に変えてOK
+    if (urlParams.get('admin') === '1234') {
         document.getElementById('admin-panel').classList.remove('hidden');
     }
 
-    // 管理者ボタンの処理
+    // 市場データ更新処理
     document.getElementById('update-market-btn').addEventListener('click', async () => {
         const rate = parseFloat(document.getElementById('market-rate').value);
+        if (isNaN(rate)) return alert("数値を入力してください");
+        
         await set(ref(db, 'market/todayRate'), rate);
-        alert("市場データを更新しました！");
+        alert(`市場データを ${rate.toFixed(2)}% に更新しました！`);
     });
 
     document.getElementById('btn-login').addEventListener('click', () => {
@@ -144,10 +144,23 @@
     function updateUI(days, lastPressed) {
         document.getElementById('day-count').innerText = days;
         
-        // 【計算式】 継続日数 × 364円 に 今日の騰落率を掛ける（少しリアルに）
+        // 金額計算： 継続日数 × 364円 × (1 + 今日の騰落率/100)
         const baseAmount = days * 364;
         const adjustedAmount = Math.floor(baseAmount * (1 + currentMarketRate / 100));
-        document.getElementById('saved-amount').innerText = adjustedAmount.toLocaleString();
+        
+        const amountDisplay = document.getElementById('saved-amount');
+        const container = document.getElementById('saved-amount-container');
+        
+        amountDisplay.innerText = adjustedAmount.toLocaleString();
+
+        // 騰落率による色分け演出
+        if (currentMarketRate > 0) {
+            container.style.color = "#2ecc71"; // プラスは緑
+        } else if (currentMarketRate < 0) {
+            container.style.color = "#e74c3c"; // マイナスは赤
+        } else {
+            container.style.color = "#2ecc71"; // デフォルト
+        }
         
         const today = new Date().toDateString();
         if (lastPressed === today) {
@@ -155,9 +168,11 @@
             document.getElementById('hold-btn').innerText = "また明日お会いしましょう";
             document.getElementById('message').innerText = "今日の修行は完了です！";
         } else {
-            document.getElementById('message').innerText = currentMarketRate >= 0 
-                ? "市場は好調です！守護額も増えています。" 
-                : "市場は嵐ですが、木は耐えています。";
+            if (currentMarketRate >= 0) {
+                document.getElementById('message').innerText = `市場は +${currentMarketRate}%！守護額も増えています。`;
+            } else {
+                document.getElementById('message').innerText = `市場は ${currentMarketRate}% の嵐ですが、木は耐えています。`;
+            }
             document.getElementById('hold-btn').disabled = false;
             document.getElementById('hold-btn').innerText = "今日も売らなかった！";
         }
@@ -172,3 +187,4 @@
 </script>
 </body>
 </html>
+git add index.html
