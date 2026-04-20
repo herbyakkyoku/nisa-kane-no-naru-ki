@@ -22,14 +22,12 @@
 <body>
 
 <div class="app-container">
-    <!-- ログイン前画面 -->
     <div id="login-section">
         <h2>カネノナルキ</h2>
         <p>将来の資産を守る修行を始めよう</p>
         <button class="login-btn" id="btn-login">Googleでログイン</button>
     </div>
 
-    <!-- メイン画面（ログイン後） -->
     <div id="main-section" class="hidden">
         <div class="status-header">
             <span id="user-name"></span> さん / 継続：<span id="day-count">0</span>日目
@@ -45,15 +43,15 @@
     </div>
 </div>
 
-<!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
         authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
+        databaseURL: "https://nisa-kane-no-naru-ki-default-rtdb.firebaseio.com",
         projectId: "nisa-kane-no-naru-ki",
         storageBucket: "nisa-kane-no-naru-ki.firebasestorage.app",
         messagingSenderId: "466336366620",
@@ -62,18 +60,16 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    const dailyProfit = 364; // 120万円/5%/30年想定の1日分
+    const dailyProfit = 364;
 
-    // ログイン処理
     document.getElementById('btn-login').addEventListener('click', () => {
         signInWithPopup(auth, provider).catch(err => console.error(err));
     });
 
-    // ログイン状態の監視
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -84,32 +80,31 @@
         }
     });
 
-    // データの読み込み
     async function loadUserData() {
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
+        const userRef = ref(db, 'users/' + currentUser.uid);
+        const snapshot = await get(userRef);
 
-        if (userSnap.exists()) {
-            const data = userSnap.data();
+        if (snapshot.exists()) {
+            const data = snapshot.val();
             updateUI(data.days, data.lastPressed);
         } else {
-            await setDoc(userRef, { days: 0, lastPressed: null });
+            await set(userRef, { days: 0, lastPressed: null });
             updateUI(0, null);
         }
     }
 
-    // 「売らなかった」ボタン
     document.getElementById('hold-btn').addEventListener('click', async () => {
-        const userRef = doc(db, "users", currentUser.uid);
+        const userRef = ref(db, 'users/' + currentUser.uid);
+        const snapshot = await get(userRef);
+        const currentDays = (snapshot.exists() ? snapshot.val().days : 0) + 1;
         const now = new Date().toDateString();
 
-        await updateDoc(userRef, {
-            days: increment(1),
+        await update(userRef, {
+            days: currentDays,
             lastPressed: now
         });
         
-        const userSnap = await getDoc(userRef);
-        updateUI(userSnap.data().days, now);
+        updateUI(currentDays, now);
     });
 
     function updateUI(days, lastPressed) {
@@ -123,9 +118,12 @@
             document.getElementById('message').innerText = "今日の修行は完了です！";
         } else {
             document.getElementById('message').innerText = "将来の自分を守りましょう";
+            document.getElementById('hold-btn').disabled = false;
+            document.getElementById('hold-btn').innerText = "今日も売らなかった！";
         }
 
         const tree = document.getElementById('tree-display');
+        if (days === 0) tree.innerText = '🌱';
         if (days >= 1) tree.innerText = '🌿';
         if (days >= 3) tree.innerText = '🪴';
         if (days >= 7) tree.innerText = '🌳';
