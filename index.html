@@ -21,7 +21,8 @@
         .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
         
         .login-btn { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-        .hidden { display: none; }
+    　　 .hidden { display: none !important; }
+
         
         /* モーダル（設定画面） */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
@@ -159,26 +160,25 @@
         document.getElementById('settings-modal').classList.remove('hidden');
     });
 
-            document.getElementById('save-settings').addEventListener('click', async () => {
+                document.getElementById('save-settings').addEventListener('click', async () => {
         const monthly = parseInt(document.getElementById('set-monthly').value) || 0;
         const initial = parseInt(document.getElementById('set-initial').value) || 0;
         const type = document.getElementById('set-type').value;
 
         try {
-            // 1. まずFirebaseに保存
             await update(ref(db, 'users/' + currentUser.uid), {
                 monthlyAmount: monthly,
                 initialAmount: initial,
                 investmentType: type
             });
             
-            // 2. 保存が完了したら、即座に設定画面（モーダル）を隠す
-            document.getElementById('settings-modal').classList.add('hidden');
+            // 【重要】クラスの追加だけでなく、直接スタイルを消す命令を追加
+            const modal = document.getElementById('settings-modal');
+            modal.style.display = 'none'; // これで物理的に消します
+            modal.classList.add('hidden');
             
-            // 3. メイン画面の数字を最新の状態に更新
             await loadUserData();
             
-            // 4. 最後に完了報告（OKを押すとメイン画面が既に見えている状態になります）
             alert("設定を保存しました！");
             
         } catch (error) {
@@ -186,6 +186,7 @@
             alert("保存に失敗しました。");
         }
     });
+
 
 
 
