@@ -6,22 +6,39 @@
     <title>カネノナルキ - NISA握力養成所</title>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
-        .app-container { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; margin: 20px; }
-        .status-header { font-size: 0.9rem; color: #666; margin-bottom: 1rem; }
-        #tree-display { font-size: 80px; margin: 20px 0; transition: transform 0.3s ease; }
+        .app-container { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; margin: 20px; position: relative; }
+        
+        /* 設定ボタン */
+        .settings-btn { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; color: #999; }
+        
+        .status-header { font-size: 0.8rem; color: #666; margin-bottom: 1rem; }
+        #tree-display { font-size: 80px; margin: 15px 0; transition: transform 0.3s ease; }
         .stats { margin: 1.5rem 0; }
-        .stats h2 { margin: 0; font-size: 2rem; transition: color 0.3s; }
-        .stats p { margin: 5px 0; font-size: 0.9rem; color: #888; }
+        .stats h2 { margin: 0; font-size: 1.8rem; transition: color 0.3s; }
+        .stats p { margin: 5px 0; font-size: 0.8rem; color: #888; }
+        
         .hold-button { background-color: #2ecc71; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: all 0.2s; }
         .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+        
         .login-btn { background-color: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
         .hidden { display: none; }
-        .counter-footer { margin-top: 1.5rem; font-size: 0.8rem; color: #aaa; }
         
-        /* 管理者用スタイル */
-        #admin-panel { margin-top: 20px; padding: 15px; border: 2px dashed #ff7675; border-radius: 10px; background: #fff5f5; }
-        .admin-input { width: 80px; padding: 5px; font-size: 1rem; text-align: center; }
-        .admin-btn { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        /* モーダル（設定画面） */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; text-align: left; }
+        .modal-content h3 { margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 5px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; }
+        .save-btn { background: #2ecc71; color: white; border: none; width: 100%; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* 管理者パネル */
+        #admin-panel { margin-top: 20px; padding: 15px; border: 2px dashed #ff7675; border-radius: 10px; background: #fff5f5; text-align: left; }
+        .admin-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.8rem; }
+        .admin-input { width: 60px; padding: 5px; text-align: center; }
+        .admin-btn { background: #ff7675; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+        
+        .counter-footer { margin-top: 1.5rem; font-size: 0.7rem; color: #aaa; }
     </style>
 </head>
 <body>
@@ -34,25 +51,54 @@
     </div>
 
     <div id="main-section" class="hidden">
+        <div class="settings-btn" id="open-settings">⚙️</div>
         <div class="status-header">
-            <span id="user-name"></span> さん / 継続：<span id="day-count">0</span>日目
+            <span id="user-name"></span> さん / <span id="display-type">---</span> / 継続：<span id="day-count">0</span>日目
         </div>
         <div id="tree-display">🌱</div>
         <div class="stats">
-            <p>将来の守護額（推定）</p>
+            <p>現在の推定守護額</p>
             <h2 id="saved-amount-container">¥<span id="saved-amount">0</span></h2>
             <p id="message">読み込み中...</p>
         </div>
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
         
         <div id="admin-panel" class="hidden">
-            <p style="font-weight: bold; color: #ff7675; font-size: 0.8rem;">管理者モード</p>
-            <p style="font-size: 0.7rem;">今日の騰落率を入力 (例: 1.25 や -2.30)</p>
-            <input type="number" id="market-rate" class="admin-input" step="0.01" value="0.00"> %
-            <button id="update-market-btn" class="admin-btn">更新</button>
+            <p style="font-weight: bold; color: #ff7675; font-size: 0.8rem; margin-top:0;">管理者モード</p>
+            <div class="admin-row">
+                <span>S&P500:</span>
+                <div><input type="number" id="rate-sp500" class="admin-input" step="0.01" value="0.00"> %</div>
+            </div>
+            <div class="admin-row">
+                <span>オルカン:</span>
+                <div><input type="number" id="rate-allcountry" class="admin-input" step="0.01" value="0.00"> %</div>
+            </div>
+            <button id="update-market-btn" class="admin-btn">市場データを一斉更新</button>
         </div>
 
-        <div class="counter-footer">現在、全国で <strong id="online-users">3,421</strong> 人が修行中</div>
+        <div class="counter-footer">現在、全国で <strong>3,421</strong> 人が修行中</div>
+    </div>
+</div>
+
+<div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>修行の設定</h3>
+        <div class="input-group">
+            <label>毎月の積立額 (円)</label>
+            <input type="number" id="set-monthly" placeholder="例: 50000">
+        </div>
+        <div class="input-group">
+            <label>現在の投資元本 (円)</label>
+            <input type="number" id="set-initial" placeholder="例: 1000000">
+        </div>
+        <div class="input-group">
+            <label>主な投資先</label>
+            <select id="set-type">
+                <option value="sp500">S&P500</option>
+                <option value="allCountry">オルカン (全世界株式)</option>
+            </select>
+        </div>
+        <button id="save-settings" class="save-btn">設定を保存して再開</button>
     </div>
 </div>
 
@@ -77,114 +123,123 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    let currentMarketRate = 0;
+    let userData = null;
+    let marketRates = { sp500: 0, allCountry: 0 };
 
-    // 市場データのリアルタイム監視
-    onValue(ref(db, 'market/todayRate'), (snapshot) => {
-        currentMarketRate = snapshot.val() || 0;
-        document.getElementById('market-rate').value = currentMarketRate; // 入力欄にも反映
-        if (currentUser) loadUserData(); 
+    // 1. 市場データを監視
+    onValue(ref(db, 'market'), (snapshot) => {
+        if (snapshot.exists()) {
+            marketRates = snapshot.val();
+            document.getElementById('rate-sp500').value = marketRates.sp500 || 0;
+            document.getElementById('rate-allcountry').value = marketRates.allCountry || 0;
+            if (currentUser) loadUserData();
+        }
     });
 
-    // 管理者モード判定 (?admin=1234)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === '1234') {
+    // 管理者モード判定
+    if (new URLSearchParams(window.location.search).get('admin') === '1234') {
         document.getElementById('admin-panel').classList.remove('hidden');
     }
 
-    // 市場データ更新処理
+    // 市場データ更新
     document.getElementById('update-market-btn').addEventListener('click', async () => {
-        const rate = parseFloat(document.getElementById('market-rate').value);
-        if (isNaN(rate)) return alert("数値を入力してください");
-        
-        await set(ref(db, 'market/todayRate'), rate);
-        alert(`市場データを ${rate.toFixed(2)}% に更新しました！`);
+        const sp500 = parseFloat(document.getElementById('rate-sp500').value);
+        const ac = parseFloat(document.getElementById('rate-allcountry').value);
+        await set(ref(db, 'market'), { sp500: sp500, allCountry: ac });
+        alert("全ユーザーの市場データを更新しました！");
     });
 
-    document.getElementById('btn-login').addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch(err => console.error(err));
+    // 設定モーダルの開閉
+    document.getElementById('open-settings').addEventListener('click', () => {
+        if (userData) {
+            document.getElementById('set-monthly').value = userData.monthlyAmount || 33333;
+            document.getElementById('set-initial').value = userData.initialAmount || 0;
+            document.getElementById('set-type').value = userData.investmentType || 'sp500';
+        }
+        document.getElementById('settings-modal').classList.remove('hidden');
     });
 
-    onAuthStateChanged(auth, async (user) => {
+    document.getElementById('save-settings').addEventListener('click', async () => {
+        const monthly = parseInt(document.getElementById('set-monthly').value);
+        const initial = parseInt(document.getElementById('set-initial').value);
+        const type = document.getElementById('set-type').value;
+
+        await update(ref(db, 'users/' + currentUser.uid), {
+            monthlyAmount: monthly,
+            initialAmount: initial,
+            investmentType: type
+        });
+        document.getElementById('settings-modal').classList.add('hidden');
+        loadUserData();
+    });
+
+    // ログイン処理
+    document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
+
+    onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('main-section').classList.remove('hidden');
             document.getElementById('user-name').innerText = user.displayName;
-            await loadUserData();
+            loadUserData();
         }
     });
 
     async function loadUserData() {
-        const userRef = ref(db, 'users/' + currentUser.uid);
-        const snapshot = await get(userRef);
-
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            updateUI(data.days, data.lastPressed);
-        } else {
-            await set(userRef, { days: 0, lastPressed: null });
-            updateUI(0, null);
-        }
+        const snapshot = await get(ref(db, 'users/' + currentUser.uid));
+        userData = snapshot.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0, investmentType: 'sp500' };
+        updateUI();
     }
 
     document.getElementById('hold-btn').addEventListener('click', async () => {
-        const userRef = ref(db, 'users/' + currentUser.uid);
-        const snapshot = await get(userRef);
-        const currentDays = (snapshot.exists() ? snapshot.val().days : 0) + 1;
+        const newDays = (userData.days || 0) + 1;
         const now = new Date().toDateString();
-
-        await update(userRef, {
-            days: currentDays,
-            lastPressed: now
-        });
-        updateUI(currentDays, now);
+        await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: now });
+        loadUserData();
     });
 
-    function updateUI(days, lastPressed) {
+    function updateUI() {
+        const days = userData.days || 0;
         document.getElementById('day-count').innerText = days;
-        
-        // 金額計算： 継続日数 × 364円 × (1 + 今日の騰落率/100)
-        const baseAmount = days * 364;
-        const adjustedAmount = Math.floor(baseAmount * (1 + currentMarketRate / 100));
-        
-        const amountDisplay = document.getElementById('saved-amount');
-        const container = document.getElementById('saved-amount-container');
-        
-        amountDisplay.innerText = adjustedAmount.toLocaleString();
+        document.getElementById('display-type').innerText = userData.investmentType === 'sp500' ? '🇺🇸 S&P500' : '🌍 オルカン';
 
-        // 騰落率による色分け演出
-        if (currentMarketRate > 0) {
-            container.style.color = "#2ecc71"; // プラスは緑
-        } else if (currentMarketRate < 0) {
-            container.style.color = "#e74c3c"; // マイナスは赤
-        } else {
-            container.style.color = "#2ecc71"; // デフォルト
-        }
-        
+        // 【新ロジック】
+        // 1日の積立額 = 月額 / 30
+        // 現在の資産 = (元本 + (1日の積立額 * 継続日数)) * (1 + 市場騰落率/100)
+        const dailyRate = (userData.monthlyAmount || 0) / 30;
+        const currentRate = marketRates[userData.investmentType] || 0;
+        const base = (userData.initialAmount || 0) + (dailyRate * days);
+        const total = Math.floor(base * (1 + currentRate / 100));
+
+        const display = document.getElementById('saved-amount');
+        const container = document.getElementById('saved-amount-container');
+        display.innerText = total.toLocaleString();
+
+        // 色分け
+        if (currentRate > 0) container.style.color = "#2ecc71";
+        else if (currentRate < 0) container.style.color = "#e74c3c";
+        else container.style.color = "#333";
+
+        // メッセージとボタン制御
         const today = new Date().toDateString();
-        if (lastPressed === today) {
+        if (userData.lastPressed === today) {
             document.getElementById('hold-btn').disabled = true;
             document.getElementById('hold-btn').innerText = "また明日お会いしましょう";
             document.getElementById('message').innerText = "今日の修行は完了です！";
         } else {
-            if (currentMarketRate >= 0) {
-                document.getElementById('message').innerText = `市場は +${currentMarketRate}%！守護額も増えています。`;
-            } else {
-                document.getElementById('message').innerText = `市場は ${currentMarketRate}% の嵐ですが、木は耐えています。`;
-            }
+            document.getElementById('message').innerText = currentRate >= 0 ? "追い風です！木も喜んでいます。" : "嵐に耐えています。根が強くなる時です。";
             document.getElementById('hold-btn').disabled = false;
             document.getElementById('hold-btn').innerText = "今日も売らなかった！";
         }
 
         const tree = document.getElementById('tree-display');
         if (days === 0) tree.innerText = '🌱';
-        else if (days >= 1 && days < 3) tree.innerText = '🌿';
-        else if (days >= 3 && days < 7) tree.innerText = '🪴';
-        else if (days >= 7 && days < 10) tree.innerText = '🌳';
-        else if (days >= 10) tree.innerText = '🌸';
+        else if (days < 3) tree.innerText = '🌿';
+        else if (days < 7) tree.innerText = '🪴';
+        else if (days < 10) tree.innerText = '🌳';
+        else tree.innerText = '🌸';
     }
 </script>
 </body>
 </html>
-git add index.html
