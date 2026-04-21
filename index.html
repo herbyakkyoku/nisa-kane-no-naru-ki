@@ -159,12 +159,24 @@
         document.getElementById(`d-${id}`).onclick = () => handleReaction('dislikes', id, roomId);
         
         // --- 共有ボタンの修正箇所 ---
-        document.getElementById(`s-${id}`).onclick = () => {
-            const shareText = `【カネノナルキ修行中🌳】\n「${msg.text}」\n\n現在の握力：${msg.days}日目\n#カネノナルキ #NISA #資産運用`;
-            const appUrl = window.location.href; // 現在のページのURLを自動取得
-            const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(appUrl)}`;
-            window.open(xUrl, '_blank');
-        };
+        // 共有ボタンのイベントを確実に動く形に修正
+document.getElementById(`s-${id}`).onclick = () => {
+    // 1. シェアしたいテキストを作成（ハッシュタグはtextに含める）
+    const shareText = `【カネノナルキ修行中🌳】\n「${msg.text}」\n\n現在の握力：${msg.days}日目\n#カネノナルキ #NISA`;
+    
+    // 2. アプリのURLを取得（?以降のパラメータを削除して純粋なURLにするのがコツ）
+    const appUrl = window.location.origin + window.location.pathname;
+    
+    // 3. X (Twitter) のインテントURLを構築
+    // urlパラメータとtextパラメータを明確に分けることでエラーを防ぎます
+    const xUrl = new URL("https://x.com/intent/tweet");
+    xUrl.searchParams.set("text", shareText);
+    xUrl.searchParams.set("url", appUrl);
+    
+    // 4. 新しいタブで開く
+    window.open(xUrl.toString(), '_blank');
+};
+
 
         onValue(query(ref(db, `messages/${roomId}`), orderByChild('parentId'), equalTo(id)), (snap) => {
             const thread = document.getElementById(`thread-${id}`);
