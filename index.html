@@ -161,21 +161,24 @@
         // --- 共有ボタンの修正箇所 ---
         // 共有ボタンのイベントを確実に動く形に修正
         // 共有ボタンのイベント：URL生成を安全に行う形に整理
+                // 共有ボタンのイベント：安全性を高めた最新版
         document.getElementById(`s-${id}`).onclick = () => {
             const shareText = `【カネノナルキ修行中🌳】\n「${msg.text}」\n\n現在の握力：${msg.days}日目\n#カネノナルキ #NISA`;
             
-            // パラメータを除去したクリーンなURLを取得
-            const appUrl = window.location.origin + window.location.pathname;
+            // 公開URLを直接指定する（window.locationだと末尾に余計な文字が入るのを防ぐため）
+            const appUrl = "https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/";
             
-            // URLオブジェクトを使って安全にエンコード
+            // 古いtwitter.comではなく最新のx.comのインテントを使用
             const xUrl = new URL("https://x.com/intent/tweet");
             xUrl.searchParams.set("text", shareText);
             xUrl.searchParams.set("url", appUrl);
             
+            // 生成されたURLを一度コンソールに表示（デバッグ用：F12で確認できます）
+            console.log("X Share URL:", xUrl.toString());
+            
             window.open(xUrl.toString(), '_blank');
         };
-
-
+　
 
         onValue(query(ref(db, `messages/${roomId}`), orderByChild('parentId'), equalTo(id)), (snap) => {
             const thread = document.getElementById(`thread-${id}`);
