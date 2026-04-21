@@ -1,9 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カネノナルキ - NISA握力養成所</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
+        .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px; margin: 20px; position: relative; }
+        .settings-btn { position: absolute; top: 15px; right: 15px; font-size: 18px; cursor: pointer; color: #ccc; }
+        .status-header { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+        #tree-display { font-size: 80px; margin: 10px 0; }
+        .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; cursor: pointer; }
+        .stat-item p { margin: 0; font-size: 0.7rem; color: #999; }
+        .stat-item div { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
+        .hold-button { background-color: #2ecc71; color: white; border: none; padding: 16px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: all 0.2s; margin-bottom: 1rem; }
+        .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+        .login-btn { background-color: #4285F4; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; }
+        .hidden { display: none !important; }
+        /* 掲示板 */
+        #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
+        #chat-messages { height: 300px; overflow-y: auto; background: #fafafa; border-radius: 12px; padding: 12px; font-size: 0.8rem; border: 1px solid #eee; margin-bottom: 10px; }
+        .msg-unit { margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+        .msg-header { font-size: 0.7rem; margin-bottom: 3px; display: flex; gap: 8px; align-items: center; }
+        .user-meta { color: #4285F4; font-weight: bold; background: #eef4ff; padding: 1px 5px; border-radius: 3px; }
+        .msg-text { font-size: 0.85rem; color: #444; margin: 5px 0; }
+        .msg-actions { display: flex; gap: 15px; font-size: 0.75rem; color: #666; margin-top: 8px; align-items: center; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .action-icon { width: 16px; height: 16px; fill: currentColor; }
+        .comment-btn { font-size: 0.75rem; color: #007aff; cursor: pointer; }
+        .thread-container { margin-left: 15px; margin-top: 8px; border-left: 2px solid #eee; padding-left: 10px; font-size: 0.8rem; color: #666; }
+        .input-row { display: flex; gap: 8px; }
+        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div id="login-section">
+        <h1>🌳 カネノナルキ</h1>
+        <button class="login-btn" id="btn-login">Googleで入門する</button>
+    </div>
+
+    <div id="main-section" class="hidden">
+        <div class="settings-btn" id="open-settings">⚙️</div>
+        <div class="status-header"><span id="user-name"></span> 門下生</div>
+        <div id="tree-display">🌱</div>
+        <div class="main-stats" id="stats-container">
+            <div class="stat-item"><p>修行日数</p><div id="day-count">0日</div></div>
+            <div class="stat-item"><p>現在の守護額</p><div id="saved-amount">¥0</div></div>
+        </div>
+        <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
+
+        <div id="chat-section">
+            <div id="chat-messages"></div>
+            <div class="input-row">
+                <input type="text" id="chat-input" placeholder="今の心境を綴れ...">
+                <button id="chat-send-btn">送信</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<svg style="display: none;">
+    <symbol id="icon-like" viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.13.24-1.53.65L7 11.29V20h10.43c.9 0 1.7-.55 2.01-1.4l2.42-6.5c.37-1 .14-2.1-.61-2.8a2.16 2.16 0 0 0-1.48-.3zM7 20H4v-9h3v9z"/></symbol>
+    <symbol id="icon-dislike" viewBox="0 0 24 24"><path d="M17 4h3v9h-3V4zM5.23 13h4.23l-1.52 4.94C7.62 18.97 8.46 20 9.62 20c.58 0 1.13-.24 1.53-.65L17 12.71V4H6.57c-.9 0-1.7.55-2.01 1.4l-2.42 6.5c-.37 1-.14 2.1.61 2.8a2.16 2.16 0 0 0 1.48.3z"/></symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></symbol>
+</svg>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, onChildAdded, runTransaction, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, runTransaction, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // --- Firebase設定（航さんのものをここに） ---
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
         authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
@@ -11,147 +81,127 @@
         projectId: "nisa-kane-no-naru-ki",
         appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
     };
-    // ------------------------------------------
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
     let currentUser = null;
-    let replyingToId = null; // 返信先のIDを保持
+    let userData = null;
+    let marketRates = { sp500: 0, allCountry: 0 };
+    let currentProfit = 0;
+    let isMasked = false;
+    let replyingToId = null;
 
-    // --- メッセージ表示ロジックの強化 ---
-    function initChat(days) {
-        let roomId = days >= 100 ? "room_100" : (days >= 30 ? "room_30" : "room_0");
-        if (currentRoomId === roomId) return;
-        currentRoomId = roomId;
+    // ログイン処理
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-section').classList.remove('hidden');
+            document.getElementById('user-name').innerText = user.displayName;
+            loadUserData();
+        }
+    });
 
-        const chatDisplay = document.getElementById('chat-messages');
-        chatDisplay.innerHTML = "";
-
-        // 全メッセージをリアルタイム監視
-        const chatRef = query(ref(db, `messages/${roomId}`), limitToLast(50));
-        onValue(chatRef, (snapshot) => {
-            chatDisplay.innerHTML = "";
-            snapshot.forEach((child) => {
-                const msgId = child.key;
-                const msg = child.val();
-                
-                // 通常の投稿のみ表示（返信はスレッド内で表示するため、一旦親がいないものだけ表示）
-                if (!msg.parentId) {
-                    renderMessage(msgId, msg, chatDisplay);
-                }
-            });
-        });
+    async function loadUserData() {
+        const snap = await get(ref(db, 'users/' + currentUser.uid));
+        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0, investmentType: 'sp500' };
+        updateUI();
+        initChat();
     }
 
-    function renderMessage(msgId, msg, container) {
-        const msgEl = document.createElement('div');
-        msgEl.className = 'msg-unit';
-        const likes = msg.likes ? Object.keys(msg.likes).length : 0;
-        const dislikes = msg.dislikes ? Object.keys(msg.dislikes).length : 0;
-        const commentCount = msg.commentCount || 0;
-
-        msgEl.innerHTML = `
-            <div class="msg-header">
-                <span class="user-name">${msg.name}</span>
-                <span class="user-meta">${msg.days}日 / ${msg.isPrivate ? '非公開' : msg.profit}</span>
-            </div>
-            <div class="msg-text">${msg.text}</div>
-            <div class="msg-actions">
-                <span class="comment-btn" onclick="window.setReply('${msgId}', '${msg.name}')">（コメント ${commentCount}）</span>
-                <span class="action-btn" onclick="window.handleReaction('likes', '${msgId}')">
-                    <svg class="action-icon"><use href="#icon-like"></use></svg> <span class="count">${likes}</span>
-                </span>
-                <span class="action-btn" onclick="window.handleReaction('dislikes', '${msgId}')">
-                    <svg class="action-icon"><use href="#icon-dislike"></use></svg> <span class="count">${dislikes}</span>
-                </span>
-                <span class="action-btn" onclick="window.shareOnX('${msg.text}')">
-                    <svg class="action-icon"><use href="#icon-share"></use></svg>
-                </span>
-            </div>
-            <div id="thread-${msgId}" class="thread-container" style="margin-left: 20px; font-size: 0.75rem; border-left: 2px solid #eee; padding-left: 10px;"></div>
-        `;
-        container.appendChild(msgEl);
-
-        // スレッド（返信）の読み込み
-        loadReplies(msgId);
+    function updateUI() {
+        const days = userData.days || 0;
+        document.getElementById('day-count').innerText = days + "日";
+        const base = (userData.initialAmount || 0) + ((userData.monthlyAmount / 30) * days);
+        currentProfit = Math.floor(base * (marketRates[userData.investmentType] / 100));
+        document.getElementById('saved-amount').innerText = isMasked ? "¥ ****" : "¥" + currentProfit.toLocaleString();
+        document.getElementById('hold-btn').disabled = (userData.lastPressed === new Date().toDateString());
     }
 
-    // --- 返信の読み込み ---
-    function loadReplies(parentId) {
-        const replyRef = query(ref(db, `messages/${currentRoomId}`), orderByChild('parentId'), equalTo(parentId));
-        onValue(replyRef, (snapshot) => {
-            const container = document.getElementById(`thread-${parentId}`);
-            if (!container) return;
+    function initChat() {
+        const roomId = "room_0"; // 簡易化のため一旦固定
+        onValue(query(ref(db, `messages/${roomId}`), limitToLast(50)), (snapshot) => {
+            const container = document.getElementById('chat-messages');
             container.innerHTML = "";
             snapshot.forEach((child) => {
-                const reply = child.val();
-                const div = document.createElement('div');
-                div.style.marginTop = "5px";
-                div.innerHTML = `<strong>${reply.name}:</strong> ${reply.text}`;
-                container.appendChild(div);
+                const msg = child.val();
+                if (!msg.parentId) renderMsg(child.key, msg, container, roomId);
             });
         });
     }
 
-    // --- 連打防止付きリアクション ---
-    window.handleReaction = async (type, msgId) => {
-        if (!currentUser) return alert("ログインが必要です");
-        const reactionRef = ref(db, `messages/${currentRoomId}/${msgId}/${type}/${currentUser.uid}`);
-        
-        // 既に押しているかチェック
-        const snapshot = await get(reactionRef);
-        if (snapshot.exists()) {
-            // 既に押してれば取り消し（トグル）
-            await set(reactionRef, null);
-        } else {
-            // 押してなければ自分のUIDを登録
-            await set(reactionRef, true);
-            // 反対側のリアクションを消す（いいねしたらバッドを消す、等の親切設計）
-            const opposite = type === 'likes' ? 'dislikes' : 'likes';
-            await set(ref(db, `messages/${currentRoomId}/${msgId}/${opposite}/${currentUser.uid}`), null);
-        }
-    };
+    function renderMsg(id, msg, container, roomId) {
+        const div = document.createElement('div');
+        div.className = 'msg-unit';
+        const likeCount = msg.likes ? Object.keys(msg.likes).length : 0;
+        const dislikeCount = msg.dislikes ? Object.keys(msg.dislikes).length : 0;
+        div.innerHTML = `
+            <div class="msg-header"><b>${msg.name}</b> <span class="user-meta">${msg.days}日</span></div>
+            <div class="msg-text">${msg.text}</div>
+            <div class="msg-actions">
+                <span class="comment-btn" id="reply-${id}">（コメント ${msg.commentCount || 0}）</span>
+                <span class="action-btn" id="l-${id}"><svg class="action-icon"><use href="#icon-like"></use></svg> ${likeCount}</span>
+                <span class="action-btn" id="d-${id}"><svg class="action-icon"><use href="#icon-dislike"></use></svg> ${dislikeCount}</span>
+                <span class="action-btn" id="s-${id}"><svg class="action-icon"><use href="#icon-share"></use></svg></span>
+            </div>
+            <div id="thread-${id}" class="thread-container"></div>
+        `;
+        container.appendChild(div);
 
-    // --- X（Twitter）共有機能 ---
-    window.shareOnX = (text) => {
-        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent('カネノナルキ修行中🌳「' + text + '」')}&hashtags=NISA,カネノナルキ`;
-        window.open(url, '_blank');
-    };
-
-    // --- 返信モードの設定 ---
-    window.setReply = (msgId, name) => {
-        replyingToId = msgId;
-        const input = document.getElementById('chat-input');
-        input.placeholder = `${name}さんへ返信中...`;
-        input.focus();
-    };
-
-    // --- 投稿送信（コメントカウント対応） ---
-    document.getElementById('chat-send-btn').addEventListener('click', async () => {
-        const input = document.getElementById('chat-input');
-        if (!input.value.trim() || !currentUser) return;
-
-        const newMsgData = {
-            uid: currentUser.uid,
-            name: currentUser.displayName,
-            days: userData.days || 0,
-            profit: currentProfit,
-            text: input.value,
-            timestamp: serverTimestamp(),
-            parentId: replyingToId || null // 返信なら親IDを入れる
+        // イベント登録
+        document.getElementById(`reply-${id}`).onclick = () => {
+            replyingToId = id;
+            document.getElementById('chat-input').placeholder = `${msg.name}さんへ返信中...`;
+            document.getElementById('chat-input').focus();
         };
+        document.getElementById(`l-${id}`).onclick = () => handleReaction('likes', id, roomId);
+        document.getElementById(`d-${id}`).onclick = () => handleReaction('dislikes', id, roomId);
+        document.getElementById(`s-${id}`).onclick = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(msg.text + ' #カネノナルキ')}`);
 
-        await push(ref(db, `messages/${currentRoomId}`), newMsgData);
+        // 返信の読み込み
+        onValue(query(ref(db, `messages/${roomId}`), orderByChild('parentId'), equalTo(id)), (snap) => {
+            const thread = document.getElementById(`thread-${id}`);
+            thread.innerHTML = "";
+            snap.forEach(c => {
+                const r = c.val();
+                thread.innerHTML += `<div><b>${r.name}:</b> ${r.text}</div>`;
+            });
+        });
+    }
 
-        // 返信だった場合、親メッセージのカウントを増やす
+    async function handleReaction(type, id, roomId) {
+        const rRef = ref(db, `messages/${roomId}/${id}/${type}/${currentUser.uid}`);
+        const snap = await get(rRef);
+        await set(rRef, snap.exists() ? null : true);
+    }
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if (!input.value) return;
+        const msgId = await push(ref(db, 'messages/room_0'), {
+            name: currentUser.displayName,
+            text: input.value,
+            parentId: replyingToId || null,
+            days: userData.days,
+            timestamp: serverTimestamp()
+        });
         if (replyingToId) {
-            const countRef = ref(db, `messages/${currentRoomId}/${replyingToId}/commentCount`);
-            await runTransaction(countRef, (count) => (count || 0) + 1);
+            await runTransaction(ref(db, `messages/room_0/${replyingToId}/commentCount`), c => (c || 0) + 1);
             replyingToId = null;
             input.placeholder = "今の心境を綴れ...";
         }
-
         input.value = "";
-    });
+    };
+
+    document.getElementById('hold-btn').onclick = async () => {
+        const newDays = (userData.days || 0) + 1;
+        await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: new Date().toDateString() });
+        loadUserData();
+    };
 </script>
+</body>
+</html>
