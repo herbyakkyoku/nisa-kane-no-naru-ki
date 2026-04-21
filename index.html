@@ -32,7 +32,6 @@
         .input-row { display: flex; gap: 8px; }
         #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
         #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     </style>
 </head>
 <body>
@@ -94,7 +93,6 @@
     let isMasked = false;
     let replyingToId = null;
 
-    // ログイン処理
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -123,7 +121,7 @@
     }
 
     function initChat() {
-        const roomId = "room_0"; // 簡易化のため一旦固定
+        const roomId = "room_0";
         onValue(query(ref(db, `messages/${roomId}`), limitToLast(50)), (snapshot) => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = "";
@@ -152,7 +150,6 @@
         `;
         container.appendChild(div);
 
-        // イベント登録
         document.getElementById(`reply-${id}`).onclick = () => {
             replyingToId = id;
             document.getElementById('chat-input').placeholder = `${msg.name}さんへ返信中...`;
@@ -160,9 +157,15 @@
         };
         document.getElementById(`l-${id}`).onclick = () => handleReaction('likes', id, roomId);
         document.getElementById(`d-${id}`).onclick = () => handleReaction('dislikes', id, roomId);
-        document.getElementById(`s-${id}`).onclick = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(msg.text + ' #カネノナルキ')}`);
+        
+        // --- 共有ボタンの修正箇所 ---
+        document.getElementById(`s-${id}`).onclick = () => {
+            const shareText = `【カネノナルキ修行中🌳】\n「${msg.text}」\n\n現在の握力：${msg.days}日目\n#カネノナルキ #NISA #資産運用`;
+            const appUrl = window.location.href; // 現在のページのURLを自動取得
+            const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(appUrl)}`;
+            window.open(xUrl, '_blank');
+        };
 
-        // 返信の読み込み
         onValue(query(ref(db, `messages/${roomId}`), orderByChild('parentId'), equalTo(id)), (snap) => {
             const thread = document.getElementById(`thread-${id}`);
             thread.innerHTML = "";
@@ -174,6 +177,7 @@
     }
 
     async function handleReaction(type, id, roomId) {
+        if (!currentUser) return;
         const rRef = ref(db, `messages/${roomId}/${id}/${type}/${currentUser.uid}`);
         const snap = await get(rRef);
         await set(rRef, snap.exists() ? null : true);
@@ -181,14 +185,15 @@
 
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
-        if (!input.value) return;
-        const msgId = await push(ref(db, 'messages/room_0'), {
+        if (!input.value || !currentUser) return;
+        const msgData = {
             name: currentUser.displayName,
             text: input.value,
             parentId: replyingToId || null,
             days: userData.days,
             timestamp: serverTimestamp()
-        });
+        };
+        await push(ref(db, 'messages/room_0'), msgData);
         if (replyingToId) {
             await runTransaction(ref(db, `messages/room_0/${replyingToId}/commentCount`), c => (c || 0) + 1);
             replyingToId = null;
