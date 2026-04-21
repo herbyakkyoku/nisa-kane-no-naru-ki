@@ -8,14 +8,17 @@
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
         .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px; margin: 20px; position: relative; }
         
-        .settings-btn { position: absolute; top: 15px; right: 15px; font-size: 18px; cursor: pointer; color: #ccc; }
+        /* ⚙️ 設定ボタン */
+        .settings-btn { position: absolute; top: 15px; right: 15px; font-size: 18px; cursor: pointer; color: #ccc; transition: color 0.2s; }
+        .settings-btn:hover { color: #999; }
+
         .status-header { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
         #tree-display { font-size: 80px; margin: 10px 0; }
         
         /* 守護額エリア（タップで目隠し） */
         .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; cursor: pointer; }
         .stat-item p { margin: 0; font-size: 0.7rem; color: #999; }
-        .stat-item div { font-size: 1.2rem; font-weight: bold; color: #2ecc71; transition: opacity 0.2s; }
+        .stat-item div { font-size: 1.2rem; font-weight: bold; color: #2ecc71; transition: color 0.2s; }
 
         .hold-button { background-color: #2ecc71; color: white; border: none; padding: 16px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: all 0.2s; margin-bottom: 1rem; }
         .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
@@ -35,18 +38,25 @@
         .user-meta { color: #4285F4; font-weight: bold; background: #eef4ff; padding: 1px 5px; border-radius: 3px; }
         .msg-text { font-size: 0.85rem; color: #444; margin: 5px 0; }
         
-        /* 投稿アクションボタン */
-        .msg-actions { display: flex; gap: 12px; font-size: 0.75rem; color: #999; }
-        .action-btn { cursor: pointer; transition: color 0.2s; display: flex; align-items: center; gap: 3px; }
-        .action-btn:hover { color: #4285F4; }
+        /* 投稿アクションボタン（YouTube風・カウント付き） */
+        .msg-actions { display: flex; gap: 15px; font-size: 0.75rem; color: #666; margin-top: 8px; align-items: center; }
+        .action-btn { cursor: pointer; transition: color 0.1s; display: flex; align-items: center; gap: 4px; }
+        .action-btn:hover { color: #333; }
+        /* SVGアイコンの共通スタイル */
+        .action-icon { width: 16px; height: 16px; fill: currentColor; }
+        
+        /* コメントボタン（文字＋カウント） */
+        .comment-btn { font-size: 0.75rem; color: #007aff; cursor: pointer; display: flex; gap: 3px; align-items: center;}
+        .comment-btn:hover { color: #0056b3; }
 
         .chat-input-area { display: flex; flex-direction: column; gap: 5px; }
         .input-row { display: flex; gap: 8px; }
         #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 0.9rem; }
-        #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
+        #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #chat-send-btn:hover { background: #3367d6; }
         .input-options { font-size: 0.7rem; color: #888; display: flex; align-items: center; gap: 5px; }
 
-        /* モーダル */
+        /* モーダル（省略） */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: white; padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; text-align: left; }
     </style>
@@ -98,24 +108,37 @@
     </div>
 </div>
 
+<svg style="display: none;">
+    <symbol id="icon-like" viewBox="0 0 24 24">
+        <path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.13.24-1.53.65L7 11.29V20h10.43c.9 0 1.7-.55 2.01-1.4l2.42-6.5c.37-1 .14-2.1-.61-2.8a2.16 2.16 0 0 0-1.48-.3zM7 20H4v-9h3v9z"/>
+    </symbol>
+    <symbol id="icon-dislike" viewBox="0 0 24 24">
+        <path d="M17 4h3v9h-3V4zM5.23 13h4.23l-1.52 4.94C7.62 18.97 8.46 20 9.62 20c.58 0 1.13-.24 1.53-.65L17 12.71V4H6.57c-.9 0-1.7.55-2.01 1.4l-2.42 6.5c-.37 1-.14 2.1.61 2.8a2.16 2.16 0 0 0 1.48.3z"/>
+    </symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24">
+        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+    </symbol>
+</svg>
+
 <div id="settings-modal" class="modal hidden">
     <div class="modal-content">
         <h3>修行の設定</h3>
-        <input type="number" id="set-monthly" placeholder="月額" style="width:100%; margin-bottom:10px;">
-        <input type="number" id="set-initial" placeholder="元本" style="width:100%; margin-bottom:10px;">
+        <input type="number" id="set-monthly" value="33333" style="width:100%; margin-bottom:10px;">
+        <input type="number" id="set-initial" value="0" style="width:100%; margin-bottom:10px;">
         <select id="set-type" style="width:100%; margin-bottom:20px;">
             <option value="sp500">S&P500</option>
             <option value="allCountry">オルカン</option>
         </select>
-        <button id="save-settings" style="width:100%; padding:10px; background:#2ecc71; border:none; color:white; border-radius:5px;">保存</button>
+        <button id="save-settings" style="width:100%; padding:10px; background:#2ecc71; border:none; color:white; border-radius:5px; cursor:pointer;">保存</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, onChildAdded, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // --- 航さんのFirebase設定（AIzaSy... AppId...）をそのまま貼り付けてください ---
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
         authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
@@ -125,6 +148,7 @@
         messagingSenderId: "466336366620",
         appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
     };
+    // --------------------------------------------------------------------------
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -138,7 +162,7 @@
     let currentProfit = 0;
     let isMasked = false; // 目隠しフラグ
 
-    // 市場監視
+    // 市場監視（以前と同様）
     onValue(ref(db, 'market'), (snapshot) => {
         if (snapshot.exists()) {
             marketRates = snapshot.val();
@@ -146,7 +170,7 @@
         }
     });
 
-    // ログイン
+    // ログイン（以前と同様）
     document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -165,22 +189,21 @@
         initChat(userData.days || 0);
     }
 
-    // 目隠し切り替え
+    // 目隠し切り替え（以前と同様）
     document.getElementById('stats-container').addEventListener('click', () => {
         isMasked = !isMasked;
         updateUI();
     });
 
     function updateUI() {
+        // UI更新ロジックは以前と同様
         const days = userData.days || 0;
         document.getElementById('day-count').innerText = days + "日";
-        
         const dailyRate = (userData.monthlyAmount || 0) / 30;
         const currentRate = marketRates[userData.investmentType] || 0;
         const base = (userData.initialAmount || 0) + (dailyRate * days);
         const total = Math.floor(base * (1 + currentRate / 100));
         currentProfit = total - base;
-        
         const profitDisplay = document.getElementById('saved-amount');
         if (isMasked) {
             profitDisplay.innerText = "¥ * * * * *";
@@ -189,7 +212,6 @@
             profitDisplay.innerText = (currentProfit >= 0 ? "¥" : "-¥") + Math.abs(Math.floor(currentProfit)).toLocaleString();
             profitDisplay.style.color = currentProfit >= 0 ? "#2ecc71" : "#e74c3c";
         }
-        
         document.getElementById('market-info').innerText = `${userData.investmentType.toUpperCase()}: ${currentRate}%`;
         const today = new Date().toDateString();
         const btn = document.getElementById('hold-btn');
@@ -197,7 +219,7 @@
         else { btn.disabled = false; btn.innerText = "今日も売らなかった！"; }
     }
 
-    // 掲示板
+    // 掲示板（大幅アップデート）
     function initChat(days) {
         let roomId = days >= 100 ? "room_100" : (days >= 30 ? "room_30" : "room_0");
         let roomName = days >= 100 ? "🏛 握力の神殿" : (days >= 30 ? "⚔️ 鋼の意思" : "🐣 ひよっこ修行場");
@@ -209,11 +231,18 @@
 
         const chatRef = query(ref(db, 'messages/' + roomId), limitToLast(30));
         onChildAdded(chatRef, (data) => {
+            const msgId = data.key; // 投稿の一意なID
             const msg = data.val();
             const msgEl = document.createElement('div');
             msgEl.className = 'msg-unit';
-            const profitStr = msg.isPrivate ? "非公開" : ((msg.profit >= 0 ? "+" : "-") + Math.abs(Math.floor(msg.profit)).toLocaleString());
+            msgEl.id = `msg-${msgId}`;
             
+            const profitStr = msg.isPrivate ? "非公開" : ((msg.profit >= 0 ? "+" : "-") + Math.abs(Math.floor(msg.profit)).toLocaleString());
+            const likes = msg.likes || 0;
+            const dislikes = msg.dislikes || 0;
+            const comments = msg.commentCount || 0; // コメント数のFirebaseデータ（まだ0）
+
+            // 新デザインのアクションエリア（返信が左端）
             msgEl.innerHTML = `
                 <div class="msg-header">
                     <span class="user-name">${msg.name}</span>
@@ -221,27 +250,72 @@
                 </div>
                 <div class="msg-text">${msg.text}</div>
                 <div class="msg-actions">
-                    <span class="action-btn" onclick="alert('修行を称えました！')">👍</span>
-                    <span class="action-btn" onclick="alert('活を入れました！')">👎</span>
-                    <span class="action-btn" onclick="document.getElementById('chat-input').value = '@${msg.name} '; document.getElementById('chat-input').focus();">💬</span>
-                    <span class="action-btn" onclick="navigator.clipboard.writeText('カネノナルキ修行中！「${msg.text}」'); alert('修行記録をコピーしました')">🔗</span>
+                    <span class="comment-btn" onclick="document.getElementById('chat-input').value = '@${msg.name} '; document.getElementById('chat-input').focus();">
+                        （コメント ${comments}）
+                    </span>
+                    
+                    <span class="action-btn" id="like-${msgId}">
+                        <svg class="action-icon"><use href="#icon-like"></use></svg>
+                        <span class="count">${likes}</span>
+                    </span>
+                    
+                    <span class="action-btn" id="dislike-${msgId}">
+                        <svg class="action-icon"><use href="#icon-dislike"></use></svg>
+                        <span class="count">${dislikes}</span>
+                    </span>
+                    
+                    <span class="action-btn" onclick="navigator.clipboard.writeText('カネノナルキ修行中！「${msg.text}」'); alert('修行記録をコピーしました')">
+                        <svg class="action-icon"><use href="#icon-share"></use></svg>
+                    </span>
                 </div>
             `;
             chatDisplay.appendChild(msgEl);
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
+
+            // いいね・バッドボタンにクリックイベントを追加（Firebaseトランザクション使用）
+            document.getElementById(`like-${msgId}`).addEventListener('click', () => handleReaction('likes', msgId));
+            document.getElementById(`dislike-${msgId}`).addEventListener('click', () => handleReaction('dislikes', msgId));
         });
     }
 
+    // リアクション（いいね・バッド）処理（Firebaseトランザクション）
+    async function handleReaction(type, msgId) {
+        if (!currentUser) return;
+        const reactionRef = ref(db, `messages/${currentRoomId}/${msgId}/${type}`);
+        try {
+            // runTransactionを使って、他のユーザーと同時に押しても数字がバグらないように＋1する
+            await runTransaction(reactionRef, (currentValue) => {
+                return (currentValue || 0) + 1;
+            });
+            // リアルタイムに画面を更新（onChildAddedが検知しないので、手動で数字を増やす）
+            const countEl = document.querySelector(`#msg-${msgId} #like-${msgId} .count, #msg-${msgId} #dislike-${msgId} .count`);
+            if (countEl) {
+                const btnId = type === 'likes' ? `like-${msgId}` : `dislike-${msgId}`;
+                const specificCountEl = document.querySelector(`#msg-${msgId} #${btnId} .count`);
+                specificCountEl.innerText = parseInt(specificCountEl.innerText) + 1;
+            }
+
+        } catch (error) {
+            console.error("リアクションエラー:", error);
+        }
+    }
+
+    // 投稿送信（以前と同様）
     document.getElementById('chat-send-btn').addEventListener('click', async () => {
         const input = document.getElementById('chat-input');
         const hideProfit = document.getElementById('hide-profit-check').checked;
-        if (!input.value.trim()) return;
+        if (!input.value.trim() || !currentUser) return;
+        
         await push(ref(db, 'messages/' + currentRoomId), {
+            uid: currentUser.uid,
             name: currentUser.displayName,
             days: userData.days || 0,
             profit: currentProfit,
             isPrivate: hideProfit,
             text: input.value,
+            likes: 0,       // 初期いいね数を0で作成
+            dislikes: 0,    // 初期バッド数を0で作成
+            commentCount: 0,// 初期コメント数を0で作成
             timestamp: serverTimestamp()
         });
         input.value = "";
