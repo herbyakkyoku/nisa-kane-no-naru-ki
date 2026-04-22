@@ -138,18 +138,25 @@
         document.getElementById('hold-btn').disabled = (userData.lastPressed === new Date().toDateString());
     }
 
-    function initChat() {
-        onValue(query(ref(db, `messages/room_0`), limitToLast(30)), (snap) => {
+        function initChat() {
+        // メッセージ全体を監視し、新しい順に並べる
+        onValue(query(ref(db, `messages/room_0`), limitToLast(50)), (snap) => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = "";
+            
+            const messages = [];
             snap.forEach(child => {
-                const msg = child.val();
-                if(!msg.parentId) renderMsg(child.key, msg, container);
+                messages.unshift({ id: child.key, ...child.val() });
+            });
+
+            // 1. まず通常の投稿（parentIdがないもの）を表示
+            messages.filter(m => !m.parentId).forEach(msg => {
+                renderMsg(msg.id, msg, container, messages);
             });
         });
     }
 
-    function renderMsg(id, msg, container) {
+    function renderMsg(id, msg, container, allMessages) {
         const div = document.createElement('div');
         div.className = 'msg-unit';
         const likes = msg.likes ? Object.keys(msg.likes).length : 0;
@@ -160,13 +167,13 @@
             <div class="msg-header">
                 <div class="user-info">
                     <span class="user-name">${msg.name}</span>
-                    <span style="font-size:0.6rem; color:#4285F4;">${b.emoji}${b.name} (${msg.days}日)</span>
+                    <span style="font-size:0.6rem; color:#4285F4;">${b.emoji}${b.name} (${msg.days}日目)</span>
                 </div>
-                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥ ****' : '¥'+msg.amount.toLocaleString()}</div>
+                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥ ****' : '¥'+(msg.amount || 0).toLocaleString()}</div>
             </div>
             <div class="msg-text">${msg.text}</div>
             <div class="msg-actions">
-                <span onclick="setReply('${id}', '${msg.name}')" style="cursor:pointer; color:#4285F4;">返信</span>
+                <span onclick="setReply('${id}', '${msg.name}')" style="cursor:pointer; color:#4285F4;">💬 返信</span>
                 <span class="action-btn" id="l-${id}"><svg class="action-icon"><use href="#icon-like"></use></svg>${likes}</span>
                 <span class="action-btn" id="f-${id}"><svg class="action-icon"><use href="#icon-fire"></use></svg>${fires}</span>
                 <span class="action-btn" id="s-${id}"><svg class="action-icon"><use href="#icon-share"></use></svg></span>
@@ -175,23 +182,22 @@
         `;
         container.appendChild(div);
 
+        // 2. このメッセージに対する返信を抽出して表示
+        const thread = document.getElementById(`thread-${id}`);
+        const replies = allMessages.filter(m => m.parentId === id);
+        replies.reverse().forEach(r => {
+            thread.innerHTML += `<div class="reply-item"><b>${r.name}:</b> ${r.text}</div>`;
+        });
+
+        // ボタンのイベント
         document.getElementById(`l-${id}`).onclick = () => handleReaction('likes', id);
         document.getElementById(`f-${id}`).onclick = () => handleReaction('fires', id);
         document.getElementById(`s-${id}`).onclick = () => {
             const shareText = `【カネノナルキ】\n「${msg.text}」\n\n握力：${msg.days}日目\n#カネノナルキ #NISA`;
             window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/`, '_blank');
         };
-
-        // スレッド（返信）のリアルタイム読み込み
-        onValue(query(ref(db, `messages/room_0`), orderByChild('parentId'), equalTo(id)), (snap) => {
-            const thread = document.getElementById(`thread-${id}`);
-            thread.innerHTML = "";
-            snap.forEach(c => {
-                const r = c.val();
-                thread.innerHTML += `<div class="reply-item"><b>${r.name}:</b> ${r.text}</div>`;
-            });
-        });
     }
+
 
     window.setReply = (id, name) => {
         replyingToId = id;
