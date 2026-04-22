@@ -217,7 +217,61 @@
     window.auth = auth; // ログアウト用
 
     // 簡易チャット初期化（ロジックは既存を継承）
-    function initChat() { /* 既存のチャットロジック... */ }
+        // チャット（道場）の初期化とリアルタイム更新
+    function initChat() {
+        const chatRef = query(ref(db, 'messages'), limitToLast(50)); // 最新50件を取得
+        
+        onValue(chatRef, (snapshot) => {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML = ""; // 一旦クリア
+            
+            const data = snapshot.val();
+            if (!data) return;
+
+            // Firebaseのデータを配列にして時間順に並べる
+            Object.keys(data).forEach(key => {
+                const msg = data[key];
+                const msgEl = document.createElement('div');
+                msgEl.className = 'msg-unit';
+                
+                // 金額を隠すかどうかの判定（保存時のフラグを利用）
+                const displayAmount = msg.maskAmount ? "¥***,***" : "¥" + (msg.amount || 0).toLocaleString();
+                
+                msgEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span style="font-weight:bold; font-size:0.8rem;">${msg.userName}</span>
+                        <span style="color:#999; font-size:0.7rem;">${msg.days || 0}日目 (${displayAmount})</span>
+                    </div>
+                    <div style="font-size:0.9rem; line-height:1.4;">${msg.text}</div>
+                `;
+                messagesDiv.prepend(msgEl); // 最新を一番上に表示
+            });
+        });
+    }
+
+    // 送信ボタンのクリックイベント
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        const maskAmount = document.getElementById('mask-amount-check').checked;
+
+        if (!text || !currentUser) return;
+
+        const amount = Math.floor(((userData.monthlyAmount / 30) * (userData.days || 0)) * 1.03);
+
+        await push(ref(db, 'messages'), {
+            uid: currentUser.uid,
+            userName: currentUser.displayName,
+            text: text,
+            days: userData.days || 0,
+            amount: amount,
+            maskAmount: maskAmount,
+            timestamp: serverTimestamp()
+        });
+
+        input.value = ""; // 入力欄を空にする
+    };
+
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
