@@ -10,6 +10,19 @@
         .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 480px; margin: 10px; position: relative; align-self: flex-start; }
         .badge { background: #eef4ff; color: var(--accent); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; }
         #tree-display { font-size: 80px; margin: 10px 0; }
+        
+        /* 追加: 揺れるアニメーション */
+        @keyframes tree-bounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3) translateY(-20px); }
+            50% { transform: scale(0.9); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .bounce-animation {
+            animation: tree-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; }
         .stat-item p { margin: 0; font-size: 0.7rem; color: #999; }
         .stat-item div { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
@@ -156,6 +169,7 @@
 <div id="settings-modal">
     <h2 style="text-align:center;">⚙️ 設定・規約</h2>
     <ul class="settings-list">
+        <li style="color: var(--accent); cursor: pointer;" onclick="requestNotification()">🔔 通知を受け取る（修行忘れ防止）</li>
         <li><a href="terms.html">利用規約</a></li>
         <li><a href="privacy.html">プライバシーポリシー</a></li>
         <li><a href="contact.html">お問い合わせ</a></li>
@@ -238,7 +252,36 @@
         userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0 };
         updateUI();
         initChat();
+        
+        /* 追加: 未修行なら通知 */
+        if (userData.lastPressed !== new Date().toDateString()) {
+            sendReminder();
+        }
     }
+
+    /* 追加: 通知関数 */
+    function sendReminder() {
+        if (Notification.permission === "granted") {
+            new Notification("カネノナルキ修行の時間です", {
+                body: "今日も握力を鍛えましょう！放置は枯れる原因です🌱",
+                icon: "favicon.ico"
+            });
+        }
+    }
+
+    /* 追加: 通知リクエスト */
+    window.requestNotification = () => {
+        if (!("Notification" in window)) {
+            alert("このブラウザは通知に対応していません");
+            return;
+        }
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                alert("通知が許可されました！");
+                sendReminder(); 
+            }
+        });
+    };
 
     function updateUI() {
         const days = userData.days || 0;
@@ -325,6 +368,11 @@
     };
 
     document.getElementById('hold-btn').onclick = async () => {
+        /* 追加: アニメーション実行 */
+        const tree = document.getElementById('tree-display');
+        tree.classList.add('bounce-animation');
+        setTimeout(() => tree.classList.remove('bounce-animation'), 600);
+
         const newDays = (userData.days || 0) + 1;
         await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: new Date().toDateString() });
         loadUserData();
