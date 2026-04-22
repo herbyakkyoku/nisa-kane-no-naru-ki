@@ -5,73 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カネノナルキ - NISA握力養成所</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
-        .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px; margin: 20px; position: relative; }
-        .settings-btn { position: absolute; top: 15px; right: 15px; font-size: 18px; cursor: pointer; color: #ccc; }
-        .status-header { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; margin: 0; color: #333; display: flex; justify-content: center; min-height: 100vh; }
+        .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 480px; margin: 10px; position: relative; }
+        .badge { background: #eef4ff; color: #4285F4; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; }
         #tree-display { font-size: 80px; margin: 10px 0; }
-        .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; cursor: pointer; }
+        .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; }
         .stat-item p { margin: 0; font-size: 0.7rem; color: #999; }
         .stat-item div { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
-        .hold-button { background-color: #2ecc71; color: white; border: none; padding: 16px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: all 0.2s; margin-bottom: 1rem; }
-        .hold-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
-        .login-btn { background-color: #4285F4; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; }
-        .hidden { display: none !important; }
-        /* 掲示板 */
+        .stat-item .loss { color: #95a5a6; }
+        .hold-button { background-color: #2ecc71; color: white; border: none; padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 1rem; }
+        .hold-button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* 掲示板エリア */
         #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
-        #chat-messages { height: 300px; overflow-y: auto; background: #fafafa; border-radius: 12px; padding: 12px; font-size: 0.8rem; border: 1px solid #eee; margin-bottom: 10px; }
-        .msg-unit { margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
-        .msg-header { font-size: 0.7rem; margin-bottom: 3px; display: flex; gap: 8px; align-items: center; }
-        .user-meta { color: #4285F4; font-weight: bold; background: #eef4ff; padding: 1px 5px; border-radius: 3px; }
-        .msg-text { font-size: 0.85rem; color: #444; margin: 5px 0; }
-        .msg-actions { display: flex; gap: 15px; font-size: 0.75rem; color: #666; margin-top: 8px; align-items: center; }
-        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .action-icon { width: 16px; height: 16px; fill: currentColor; }
-        .comment-btn { font-size: 0.75rem; color: #007aff; cursor: pointer; }
-        .thread-container { margin-left: 15px; margin-top: 8px; border-left: 2px solid #eee; padding-left: 10px; font-size: 0.8rem; color: #666; }
+        #chat-messages { height: 400px; overflow-y: auto; margin-bottom: 10px; padding-right: 5px; }
+        .msg-unit { background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .user-info { display: flex; flex-direction: column; gap: 2px; }
+        .user-name { font-weight: bold; font-size: 0.85rem; }
+        .msg-text { font-size: 0.9rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+        .msg-actions { display: flex; gap: 12px; font-size: 0.75rem; color: #666; margin-top: 10px; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: #f8f9fa; }
+        .action-icon { width: 14px; height: 14px; fill: currentColor; }
+        
+        /* スレッド（返信） */
+        .thread-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .reply-item { font-size: 0.8rem; background: #fcfcfc; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; border-left: 3px solid #ddd; }
+
+        .input-area { position: sticky; bottom: 0; background: white; padding: 10px 0; border-top: 1px solid #eee; }
         .input-row { display: flex; gap: 8px; }
-        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-        #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
+        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 0.9rem; }
+        #chat-send-btn { background: #4285F4; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .mask-option { font-size: 0.7rem; color: #888; margin-top: 5px; display: block; }
+        .hidden { display: none !important; }
+        .login-btn { background-color: #4285F4; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div id="login-section">
-        <h1>🌳 カネノナルキ</h1>
+        <h1 style="margin-bottom:0.5rem;">🌳 カネノナルキ</h1>
+        <p style="color: #666; font-size: 0.85rem;">〜NISA握力養成所〜</p>
         <button class="login-btn" id="btn-login">Googleで入門する</button>
     </div>
 
     <div id="main-section" class="hidden">
-        <div class="settings-btn" id="open-settings">⚙️</div>
-        <div class="status-header"><span id="user-name"></span> 門下生</div>
+        <div id="user-badge" class="badge">🐣 ひよっこ門下生</div>
         <div id="tree-display">🌱</div>
-        <div class="main-stats" id="stats-container">
+        <div class="main-stats">
             <div class="stat-item"><p>修行日数</p><div id="day-count">0日</div></div>
-            <div class="stat-item"><p>現在の守護額</p><div id="saved-amount">¥0</div></div>
+            <div class="stat-item"><p>守護額</p><div id="saved-amount">¥0</div></div>
         </div>
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
 
         <div id="chat-section">
             <div id="chat-messages"></div>
-            <div class="input-row">
-                <input type="text" id="chat-input" placeholder="今の心境を綴れ...">
-                <button id="chat-send-btn">送信</button>
+            <div class="input-area">
+                <div id="reply-label" style="font-size:0.7rem; color:#4285F4; margin-bottom:3px; display:none;">返信中: <span id="reply-target-name"></span> <span style="cursor:pointer; color:#999;" onclick="cancelReply()">[取消]</span></div>
+                <div class="input-row">
+                    <input type="text" id="chat-input" placeholder="今の心境を綴れ...">
+                    <button id="chat-send-btn">送信</button>
+                </div>
+                <label class="mask-option">
+                    <input type="checkbox" id="mask-amount-check"> 金額を隠して投稿
+                </label>
             </div>
         </div>
     </div>
 </div>
 
 <svg style="display: none;">
-    <symbol id="icon-like" viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.13.24-1.53.65L7 11.29V20h10.43c.9 0 1.7-.55 2.01-1.4l2.42-6.5c.37-1 .14-2.1-.61-2.8a2.16 2.16 0 0 0-1.48-.3zM7 20H4v-9h3v9z"/></symbol>
-    <symbol id="icon-dislike" viewBox="0 0 24 24"><path d="M17 4h3v9h-3V4zM5.23 13h4.23l-1.52 4.94C7.62 18.97 8.46 20 9.62 20c.58 0 1.13-.24 1.53-.65L17 12.71V4H6.57c-.9 0-1.7.55-2.01 1.4l-2.42 6.5c-.37 1-.14 2.1.61 2.8a2.16 2.16 0 0 0 1.48.3z"/></symbol>
+    <symbol id="icon-like" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></symbol>
+    <symbol id="icon-fire" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></symbol>
     <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></symbol>
 </svg>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, runTransaction, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -88,132 +101,127 @@
 
     let currentUser = null;
     let userData = null;
-    let marketRates = { sp500: 0, allCountry: 0 };
-    let currentProfit = 0;
-    let isMasked = false;
     let replyingToId = null;
 
+    function getBadgeInfo(days) {
+        if (days >= 100) return { name: "伝説の投資家", emoji: "🏆" };
+        if (days >= 50) return { name: "鉄の握力", emoji: "🦾" };
+        if (days >= 30) return { name: "熟練門下生", emoji: "🥋" };
+        if (days >= 7) return { name: "一人前門下生", emoji: "⚔️" };
+        return { name: "ひよっこ門下生", emoji: "🐣" };
+    }
+
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('main-section').classList.remove('hidden');
-            document.getElementById('user-name').innerText = user.displayName;
-            loadUserData();
-        }
-    });
+    onAuthStateChanged(auth, user => { if(user){ currentUser=user; document.getElementById('login-section').classList.add('hidden'); document.getElementById('main-section').classList.remove('hidden'); loadUserData(); }});
 
     async function loadUserData() {
         const snap = await get(ref(db, 'users/' + currentUser.uid));
-        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0, investmentType: 'sp500' };
+        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0 };
         updateUI();
         initChat();
     }
 
     function updateUI() {
         const days = userData.days || 0;
+        const b = getBadgeInfo(days);
         document.getElementById('day-count').innerText = days + "日";
-        const base = (userData.initialAmount || 0) + ((userData.monthlyAmount / 30) * days);
-        currentProfit = Math.floor(base * (marketRates[userData.investmentType] / 100));
-        document.getElementById('saved-amount').innerText = isMasked ? "¥ ****" : "¥" + currentProfit.toLocaleString();
+        document.getElementById('user-badge').innerText = b.emoji + " " + b.name;
+        
+        // 簡易計算：元本 + 3%利益（ダミー）
+        const amount = Math.floor(((userData.monthlyAmount / 30) * days) * 1.03);
+        const el = document.getElementById('saved-amount');
+        el.innerText = "¥" + amount.toLocaleString();
+        if(amount < 0) el.classList.add('loss'); else el.classList.remove('loss');
+
+        const trees = ["🌱", "🌿", "🌲", "🌳", "💹"];
+        document.getElementById('tree-display').innerText = trees[Math.min(Math.floor(days/10), 4)];
         document.getElementById('hold-btn').disabled = (userData.lastPressed === new Date().toDateString());
     }
 
     function initChat() {
-        const roomId = "room_0";
-        onValue(query(ref(db, `messages/${roomId}`), limitToLast(50)), (snapshot) => {
+        onValue(query(ref(db, `messages/room_0`), limitToLast(30)), (snap) => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = "";
-            snapshot.forEach((child) => {
+            snap.forEach(child => {
                 const msg = child.val();
-                if (!msg.parentId) renderMsg(child.key, msg, container, roomId);
+                if(!msg.parentId) renderMsg(child.key, msg, container);
             });
         });
     }
 
-    function renderMsg(id, msg, container, roomId) {
+    function renderMsg(id, msg, container) {
         const div = document.createElement('div');
         div.className = 'msg-unit';
-        const likeCount = msg.likes ? Object.keys(msg.likes).length : 0;
-        const dislikeCount = msg.dislikes ? Object.keys(msg.dislikes).length : 0;
+        const likes = msg.likes ? Object.keys(msg.likes).length : 0;
+        const fires = msg.fires ? Object.keys(msg.fires).length : 0;
+        const b = getBadgeInfo(msg.days);
+
         div.innerHTML = `
-            <div class="msg-header"><b>${msg.name}</b> <span class="user-meta">${msg.days}日</span></div>
+            <div class="msg-header">
+                <div class="user-info">
+                    <span class="user-name">${msg.name}</span>
+                    <span style="font-size:0.6rem; color:#4285F4;">${b.emoji}${b.name} (${msg.days}日)</span>
+                </div>
+                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥ ****' : '¥'+msg.amount.toLocaleString()}</div>
+            </div>
             <div class="msg-text">${msg.text}</div>
             <div class="msg-actions">
-                <span class="comment-btn" id="reply-${id}">（コメント ${msg.commentCount || 0}）</span>
-                <span class="action-btn" id="l-${id}"><svg class="action-icon"><use href="#icon-like"></use></svg> ${likeCount}</span>
-                <span class="action-btn" id="d-${id}"><svg class="action-icon"><use href="#icon-dislike"></use></svg> ${dislikeCount}</span>
+                <span onclick="setReply('${id}', '${msg.name}')" style="cursor:pointer; color:#4285F4;">返信</span>
+                <span class="action-btn" id="l-${id}"><svg class="action-icon"><use href="#icon-like"></use></svg>${likes}</span>
+                <span class="action-btn" id="f-${id}"><svg class="action-icon"><use href="#icon-fire"></use></svg>${fires}</span>
                 <span class="action-btn" id="s-${id}"><svg class="action-icon"><use href="#icon-share"></use></svg></span>
             </div>
             <div id="thread-${id}" class="thread-container"></div>
         `;
         container.appendChild(div);
 
-        document.getElementById(`reply-${id}`).onclick = () => {
-            replyingToId = id;
-            document.getElementById('chat-input').placeholder = `${msg.name}さんへ返信中...`;
-            document.getElementById('chat-input').focus();
-        };
-        document.getElementById(`l-${id}`).onclick = () => handleReaction('likes', id, roomId);
-        document.getElementById(`d-${id}`).onclick = () => handleReaction('dislikes', id, roomId);
-        
-        // --- 共有ボタンの修正箇所 ---
-        // 共有ボタンのイベントを確実に動く形に修正
-        // 共有ボタンのイベント：URL生成を安全に行う形に整理
-                // 共有ボタンのイベント：安全性を高めた最新版
+        document.getElementById(`l-${id}`).onclick = () => handleReaction('likes', id);
+        document.getElementById(`f-${id}`).onclick = () => handleReaction('fires', id);
         document.getElementById(`s-${id}`).onclick = () => {
-            const shareText = `【カネノナルキ修行中🌳】\n「${msg.text}」\n\n現在の握力：${msg.days}日目\n#カネノナルキ #NISA`;
-            
-            // 公開URLを直接指定する（window.locationだと末尾に余計な文字が入るのを防ぐため）
-            const appUrl = "https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/";
-            
-            // 古いtwitter.comではなく最新のx.comのインテントを使用
-            const xUrl = new URL("https://x.com/intent/tweet");
-            xUrl.searchParams.set("text", shareText);
-            xUrl.searchParams.set("url", appUrl);
-            
-            // 生成されたURLを一度コンソールに表示（デバッグ用：F12で確認できます）
-            console.log("X Share URL:", xUrl.toString());
-            
-            window.open(xUrl.toString(), '_blank');
+            const shareText = `【カネノナルキ】\n「${msg.text}」\n\n握力：${msg.days}日目\n#カネノナルキ #NISA`;
+            window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/`, '_blank');
         };
-　
 
-        onValue(query(ref(db, `messages/${roomId}`), orderByChild('parentId'), equalTo(id)), (snap) => {
+        // スレッド（返信）のリアルタイム読み込み
+        onValue(query(ref(db, `messages/room_0`), orderByChild('parentId'), equalTo(id)), (snap) => {
             const thread = document.getElementById(`thread-${id}`);
             thread.innerHTML = "";
             snap.forEach(c => {
                 const r = c.val();
-                thread.innerHTML += `<div><b>${r.name}:</b> ${r.text}</div>`;
+                thread.innerHTML += `<div class="reply-item"><b>${r.name}:</b> ${r.text}</div>`;
             });
         });
     }
 
-    async function handleReaction(type, id, roomId) {
-        if (!currentUser) return;
-        const rRef = ref(db, `messages/${roomId}/${id}/${type}/${currentUser.uid}`);
-        const snap = await get(rRef);
-        await set(rRef, snap.exists() ? null : true);
-    }
+    window.setReply = (id, name) => {
+        replyingToId = id;
+        document.getElementById('reply-label').style.display = 'block';
+        document.getElementById('reply-target-name').innerText = name;
+        document.getElementById('chat-input').focus();
+    };
+
+    window.cancelReply = () => {
+        replyingToId = null;
+        document.getElementById('reply-label').style.display = 'none';
+    };
 
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
-        if (!input.value || !currentUser) return;
+        if(!input.value) return;
+        const amount = Math.floor(((userData.monthlyAmount / 30) * userData.days) * 1.03);
+        
         const msgData = {
             name: currentUser.displayName,
             text: input.value,
-            parentId: replyingToId || null,
             days: userData.days,
+            amount: amount,
+            isAmountHidden: document.getElementById('mask-amount-check').checked,
+            parentId: replyingToId || null,
             timestamp: serverTimestamp()
         };
         await push(ref(db, 'messages/room_0'), msgData);
-        if (replyingToId) {
-            await runTransaction(ref(db, `messages/room_0/${replyingToId}/commentCount`), c => (c || 0) + 1);
-            replyingToId = null;
-            input.placeholder = "今の心境を綴れ...";
-        }
         input.value = "";
+        cancelReply();
     };
 
     document.getElementById('hold-btn').onclick = async () => {
@@ -221,6 +229,12 @@
         await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: new Date().toDateString() });
         loadUserData();
     };
+
+    async function handleReaction(type, id) {
+        const rRef = ref(db, `messages/room_0/${id}/${type}/${currentUser.uid}`);
+        const snap = await get(rRef);
+        await set(rRef, snap.exists() ? null : true);
+    }
 </script>
 </body>
 </html>
