@@ -18,7 +18,15 @@
         
         /* 掲示板エリア */
         #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
-        #chat-messages { height: 50vh; overflow-y: auto; margin-bottom: 10px; padding-right: 5px; }
+        
+        /* チャット一覧の高さ調整 */
+        #chat-messages { 
+            height: calc(100vh - 280px); 
+            overflow-y: auto; 
+            margin-bottom: 85px; /* 入力エリアのスペースを確保 */
+            padding-right: 5px; 
+        }
+
         .msg-unit { background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
         .msg-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .user-name { font-weight: bold; font-size: 0.85rem; }
@@ -31,42 +39,59 @@
         .thread-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .reply-item { font-size: 0.8rem; background: #fcfcfc; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; border-left: 3px solid #ddd; }
 
-        /* 入力エリア */
-        .input-area { background: white; padding: 10px 0; border-top: 1px solid #eee; }
+        /* 入力エリア（ナビの上に固定） */
+        .input-area { 
+            position: fixed;
+            bottom: 65px; 
+            left: 0;
+            width: 100%;
+            background: white; 
+            padding: 10px 15px; 
+            box-sizing: border-box;
+            border-top: 1px solid #eee; 
+            z-index: 900;
+        }
         .input-row { display: flex; gap: 8px; }
         #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 0.9rem; }
         #chat-send-btn { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         /* ボトムナビゲーション */
-        /* ナビゲーション全体の高さを固定 */
-.bottom-nav {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    height: 65px; /* 高さを明示的に固定 */
-    background: #fff;
-    border-top: 1px solid #eee;
-}
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 65px;
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            position: fixed; 
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
 
-/* アイコン自体のサイズを強制的に指定 */
-.nav-icon {
-    width: 24px !important;  /* ここが重要：巨大化を防ぎます */
-    height: 24px !important;
-    fill: currentColor;
-    margin-bottom: 2px;
-    display: block; /* 余計な隙間を排除 */
-}
+        .nav-icon {
+            width: 24px !important;
+            height: 24px !important;
+            fill: currentColor;
+            margin-bottom: 2px;
+            display: block;
+        }
 
-/* ナビ項目内のレイアウト */
-.nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+        }
 
-        
+        .nav-item.active { color: var(--primary); }
+        .nav-label { font-size: 10px; font-weight: bold; }
+
         /* 設定モーダル */
         #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 2rem; box-sizing: border-box; display: none; }
         .settings-list { list-style: none; padding: 0; text-align: left; }
@@ -147,7 +172,7 @@
     <symbol id="icon-home" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
     <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-5H6V7h12v2z"/></symbol>
     <symbol id="icon-money" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></symbol>
-    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38(1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
     <symbol id="icon-like" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></symbol>
     <symbol id="icon-fire" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></symbol>
     <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></symbol>
