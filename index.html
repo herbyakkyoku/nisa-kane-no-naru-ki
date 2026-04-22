@@ -9,36 +9,95 @@
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg); margin: 0; color: #333; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 75px; }
         .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 480px; margin: 10px; position: relative; align-self: flex-start; }
         .badge { background: #eef4ff; color: var(--accent); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; }
-        
-        /* 1. アニメーション設定 */
-        #tree-display { font-size: 80px; margin: 10px 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .bounce { transform: scale(1.3) translateY(-20px); }
-
+        #tree-display { font-size: 80px; margin: 10px 0; }
         .main-stats { display: flex; justify-content: space-around; margin-bottom: 1.5rem; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #f0f0f0; }
         .stat-item p { margin: 0; font-size: 0.7rem; color: #999; }
         .stat-item div { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
         .hold-button { background-color: var(--primary); color: white; border: none; padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2); }
-        .hold-button:active { transform: scale(0.98); }
         .hold-button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
         
+        /* 掲示板エリア */
         #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
-        #chat-messages { height: calc(100vh - 280px); overflow-y: auto; margin-bottom: 85px; padding-right: 5px; }
+        
+        /* チャット一覧の高さ調整 */
+        #chat-messages { 
+            height: calc(100vh - 280px); 
+            overflow-y: auto; 
+            margin-bottom: 85px; /* 入力エリアのスペースを確保 */
+            padding-right: 5px; 
+        }
+
         .msg-unit { background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-        .input-area { position: fixed; bottom: 65px; left: 0; width: 100%; background: white; padding: 10px 15px; box-sizing: border-box; border-top: 1px solid #eee; z-index: 900; }
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .user-name { font-weight: bold; font-size: 0.85rem; }
+        .msg-text { font-size: 0.9rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+        .msg-actions { display: flex; gap: 12px; font-size: 0.75rem; color: #666; margin-top: 10px; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: #f8f9fa; }
+        .action-icon { width: 16px; height: 16px; fill: currentColor; }
+        
+        /* スレッド（返信） */
+        .thread-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .reply-item { font-size: 0.8rem; background: #fcfcfc; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; border-left: 3px solid #ddd; }
+
+        /* 入力エリア（ナビの上に固定） */
+        .input-area { 
+            position: fixed;
+            bottom: 65px; 
+            left: 0;
+            width: 100%;
+            background: white; 
+            padding: 10px 15px; 
+            box-sizing: border-box;
+            border-top: 1px solid #eee; 
+            z-index: 900;
+        }
         .input-row { display: flex; gap: 8px; }
         #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 0.9rem; }
         #chat-send-btn { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        .bottom-nav { display: flex; justify-content: space-around; align-items: center; height: 65px; background: #ffffff; border-top: 1px solid #eee; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-icon { width: 24px !important; height: 24px !important; fill: currentColor; margin-bottom: 2px; display: block; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; }
+        /* ボトムナビゲーション */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 65px;
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            position: fixed; 
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-icon {
+            width: 24px !important;
+            height: 24px !important;
+            fill: currentColor;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+        }
+
         .nav-item.active { color: var(--primary); }
         .nav-label { font-size: 10px; font-weight: bold; }
 
+        /* 設定モーダル */
         #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 2rem; box-sizing: border-box; display: none; }
         .settings-list { list-style: none; padding: 0; text-align: left; }
         .settings-list li { padding: 15px 0; border-bottom: 1px solid #eee; font-weight: bold; }
         .settings-list a { color: #333; text-decoration: none; display: block; width: 100%; }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -46,12 +105,12 @@
 
 <div class="app-container">
     <div id="login-section">
-        <h1>🌳 カネノナルキ</h1>
-        <p>〜NISA握力養成所〜</p>
+        <h1 style="margin-bottom:0.5rem;">🌳 カネノナルキ</h1>
+        <p style="color: #666; font-size: 0.85rem;">〜NISA握力養成所〜</p>
         <button class="hold-button" id="btn-login" style="background-color: var(--accent);">Googleで入門する</button>
     </div>
 
-    <div id="main-content" class="hidden">
+    <div id="main-content">
         <div id="user-badge" class="badge">🐣 ひよっこ門下生</div>
         <div id="tree-display">🌱</div>
         <div class="main-stats">
@@ -81,22 +140,25 @@
 
 <nav class="bottom-nav hidden" id="global-nav">
     <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
-        <svg class="nav-icon"><use href="#icon-home"></use></svg><span class="nav-label">修行</span>
+        <svg class="nav-icon"><use href="#icon-home"></use></svg>
+        <span class="nav-label">修行</span>
     </div>
     <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
-        <svg class="nav-icon"><use href="#icon-chat"></use></svg><span class="nav-label">道場</span>
+        <svg class="nav-icon"><use href="#icon-chat"></use></svg>
+        <span class="nav-label">道場</span>
     </div>
     <div class="nav-item" onclick="showSettings()">
-        <svg class="nav-icon"><use href="#icon-settings"></use></svg><span class="nav-label">設定</span>
+        <svg class="nav-icon"><use href="#icon-settings"></use></svg>
+        <span class="nav-label">設定</span>
     </div>
 </nav>
 
 <div id="settings-modal">
     <h2 style="text-align:center;">⚙️ 設定・規約</h2>
     <ul class="settings-list">
-        <li style="color: var(--accent); cursor: pointer;" onclick="requestNotification()">🔔 通知を受け取る（修行忘れ防止）</li>
-        <li><a href="#">利用規約</a></li>
-        <li><a href="#">プライバシーポリシー</a></li>
+        <li><a href="terms.html">利用規約</a></li>
+        <li><a href="privacy.html">プライバシーポリシー</a></li>
+        <li><a href="contact.html">お問い合わせ</a></li>
         <li style="color: #e74c3c; cursor: pointer;" onclick="auth.signOut(); location.reload();">ログアウト</li>
     </ul>
     <button onclick="hideSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:#eee; font-weight:bold; margin-top:20px;">閉じる</button>
@@ -107,12 +169,15 @@
     <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-5H6V7h12v2z"/></symbol>
     <symbol id="icon-money" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38(1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
+    <symbol id="icon-like" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></symbol>
+    <symbol id="icon-fire" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></symbol>
 </svg>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -129,80 +194,15 @@
 
     let currentUser = null;
     let userData = null;
+    let replyingToId = null;
 
-    // 2. データの永続化: ログイン状態の監視
-    onAuthStateChanged(auth, async user => { 
-        if(user){ 
-            currentUser = user; 
-            document.getElementById('login-section').classList.add('hidden'); 
-            document.getElementById('main-content').classList.remove('hidden');
-            document.getElementById('global-nav').classList.remove('hidden');
-            await loadUserData(); 
-        }
-    });
-
-    async function loadUserData() {
-        const snap = await get(ref(db, 'users/' + currentUser.uid));
-        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333 };
-        updateUI();
-        initChat();
-    }
-
-    function updateUI() {
-        const days = userData.days || 0;
-        document.getElementById('day-count').innerText = days + "日";
-        const amount = Math.floor(((userData.monthlyAmount / 30) * days) * 1.03);
-        document.getElementById('saved-amount').innerText = "¥" + amount.toLocaleString();
-        
-        const trees = ["🌱", "🌿", "🌲", "🌳", "💹"];
-        document.getElementById('tree-display').innerText = trees[Math.min(Math.floor(days/10), 4)];
-        
-        const today = new Date().toDateString();
-        document.getElementById('hold-btn').disabled = (userData.lastPressed === today);
-    }
-
-    // 修行ボタンクリック
-    document.getElementById('hold-btn').onclick = async () => {
-        const tree = document.getElementById('tree-display');
-        
-        // 1. アニメーション実行
-        tree.classList.add('bounce');
-        setTimeout(() => tree.classList.remove('bounce'), 300);
-
-        // 2. データの永続化
-        const newDays = (userData.days || 0) + 1;
-        const today = new Date().toDateString();
-        
-        await update(ref(db, 'users/' + currentUser.uid), { 
-            days: newDays, 
-            lastPressed: today 
-        });
-        
-        userData.days = newDays;
-        userData.lastPressed = today;
-        updateUI();
-    };
-
-    // 3. 通知機能のリクエスト（設定画面用）
-    window.requestNotification = () => {
-        if (!("Notification" in window)) {
-            alert("このブラウザは通知に対応していません");
-            return;
-        }
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                alert("通知がオンになりました！毎日リマインドします（開発中）");
-                new Notification("カネノナルキ", { body: "これで修行を忘れることはありません！", icon: "🌱" });
-            }
-        });
-    };
-
-    // タブ切り替えなどは既存のまま
+    // --- タブ切り替え関数 ---
     window.switchTab = (tab) => {
         document.getElementById('main-content').classList.add('hidden');
         document.getElementById('chat-content').classList.add('hidden');
         document.getElementById('nav-main').classList.remove('active');
         document.getElementById('nav-chat').classList.remove('active');
+
         if(tab === 'main') {
             document.getElementById('main-content').classList.remove('hidden');
             document.getElementById('nav-main').classList.add('active');
@@ -214,65 +214,127 @@
 
     window.showSettings = () => document.getElementById('settings-modal').style.display = 'block';
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-    window.auth = auth; // ログアウト用
 
-    // 簡易チャット初期化（ロジックは既存を継承）
-        // チャット（道場）の初期化とリアルタイム更新
+    function getBadgeInfo(days) {
+        if (days >= 100) return { name: "伝説の投資家", emoji: "🏆" };
+        if (days >= 50) return { name: "鉄の握力", emoji: "🦾" };
+        if (days >= 30) return { name: "熟練門下生", emoji: "🥋" };
+        if (days >= 7) return { name: "一人前門下生", emoji: "⚔️" };
+        return { name: "ひよっこ門下生", emoji: "🐣" };
+    }
+
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
+    onAuthStateChanged(auth, user => { 
+        if(user){ 
+            currentUser=user; 
+            document.getElementById('login-section').classList.add('hidden'); 
+            document.getElementById('global-nav').classList.remove('hidden');
+            loadUserData(); 
+        }
+    });
+
+    async function loadUserData() {
+        const snap = await get(ref(db, 'users/' + currentUser.uid));
+        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, initialAmount: 0 };
+        updateUI();
+        initChat();
+    }
+
+    function updateUI() {
+        const days = userData.days || 0;
+        const b = getBadgeInfo(days);
+        document.getElementById('day-count').innerText = days + "日";
+        document.getElementById('user-badge').innerText = b.emoji + " " + b.name;
+        const amount = Math.floor(((userData.monthlyAmount / 30) * days) * 1.03);
+        document.getElementById('saved-amount').innerText = "¥" + amount.toLocaleString();
+        const trees = ["🌱", "🌿", "🌲", "🌳", "💹"];
+        document.getElementById('tree-display').innerText = trees[Math.min(Math.floor(days/10), 4)];
+        document.getElementById('hold-btn').disabled = (userData.lastPressed === new Date().toDateString());
+    }
+
     function initChat() {
-        const chatRef = query(ref(db, 'messages'), limitToLast(50)); // 最新50件を取得
-        
-        onValue(chatRef, (snapshot) => {
-            const messagesDiv = document.getElementById('chat-messages');
-            messagesDiv.innerHTML = ""; // 一旦クリア
-            
-            const data = snapshot.val();
-            if (!data) return;
-
-            // Firebaseのデータを配列にして時間順に並べる
-            Object.keys(data).forEach(key => {
-                const msg = data[key];
-                const msgEl = document.createElement('div');
-                msgEl.className = 'msg-unit';
-                
-                // 金額を隠すかどうかの判定（保存時のフラグを利用）
-                const displayAmount = msg.maskAmount ? "¥***,***" : "¥" + (msg.amount || 0).toLocaleString();
-                
-                msgEl.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span style="font-weight:bold; font-size:0.8rem;">${msg.userName}</span>
-                        <span style="color:#999; font-size:0.7rem;">${msg.days || 0}日目 (${displayAmount})</span>
-                    </div>
-                    <div style="font-size:0.9rem; line-height:1.4;">${msg.text}</div>
-                `;
-                messagesDiv.prepend(msgEl); // 最新を一番上に表示
-            });
+        onValue(query(ref(db, `messages/room_0`), limitToLast(50)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            const messages = [];
+            snap.forEach(child => { messages.unshift({ id: child.key, ...child.val() }); });
+            messages.filter(m => !m.parentId).forEach(msg => { renderMsg(msg.id, msg, container, messages); });
         });
     }
 
-    // 送信ボタンのクリックイベント
-    document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        const text = input.value.trim();
-        const maskAmount = document.getElementById('mask-amount-check').checked;
+    function renderMsg(id, msg, container, allMessages) {
+        const div = document.createElement('div');
+        div.className = 'msg-unit';
+        const likes = msg.likes ? Object.keys(msg.likes).length : 0;
+        const fires = msg.fires ? Object.keys(msg.fires).length : 0;
+        const b = getBadgeInfo(msg.days);
 
-        if (!text || !currentUser) return;
+        div.innerHTML = `
+            <div class="msg-header">
+                <div class="user-info">
+                    <span class="user-name">${msg.name}</span>
+                    <span style="font-size:0.6rem; color:var(--accent);">${b.emoji}${b.name} (${msg.days}日)</span>
+                </div>
+                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥ ****' : '¥'+(msg.amount || 0).toLocaleString()}</div>
+            </div>
+            <div class="msg-text">${msg.text}</div>
+            <div class="msg-actions">
+                <span onclick="setReply('${id}', '${msg.name}')" style="cursor:pointer; color:var(--accent);">💬 返信</span>
+                <span class="action-btn" onclick="handleReaction('likes', '${id}')"><svg class="action-icon"><use href="#icon-like"></use></svg>${likes}</span>
+                <span class="action-btn" onclick="handleReaction('fires', '${id}')"><svg class="action-icon"><use href="#icon-fire"></use></svg>${fires}</span>
+                <span class="action-btn" onclick="shareMsg('${msg.text}', ${msg.days})"><svg class="action-icon"><use href="#icon-share"></use></svg></span>
+            </div>
+            <div id="thread-${id}" class="thread-container"></div>
+        `;
+        container.appendChild(div);
 
-        const amount = Math.floor(((userData.monthlyAmount / 30) * (userData.days || 0)) * 1.03);
-
-        await push(ref(db, 'messages'), {
-            uid: currentUser.uid,
-            userName: currentUser.displayName,
-            text: text,
-            days: userData.days || 0,
-            amount: amount,
-            maskAmount: maskAmount,
-            timestamp: serverTimestamp()
+        const thread = document.getElementById(`thread-${id}`);
+        const replies = allMessages.filter(m => m.parentId === id);
+        replies.reverse().forEach(r => {
+            thread.innerHTML += `<div class="reply-item"><b>${r.name}:</b> ${r.text}</div>`;
         });
+    }
 
-        input.value = ""; // 入力欄を空にする
+    window.setReply = (id, name) => {
+        replyingToId = id;
+        document.getElementById('reply-label').style.display = 'block';
+        document.getElementById('reply-target-name').innerText = name;
+        document.getElementById('chat-input').focus();
     };
 
-    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
+    window.cancelReply = () => {
+        replyingToId = null;
+        document.getElementById('reply-label').style.display = 'none';
+    };
+
+    window.shareMsg = (text, days) => {
+        const shareText = `【カネノナルキ】\n「${text}」\n\n握力：${days}日目\n#カネノナルキ #NISA`;
+        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/`, '_blank');
+    };
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value) return;
+        const amount = Math.floor(((userData.monthlyAmount / 30) * userData.days) * 1.03);
+        await push(ref(db, 'messages/room_0'), {
+            name: currentUser.displayName, text: input.value, days: userData.days, amount: amount,
+            isAmountHidden: document.getElementById('mask-amount-check').checked,
+            parentId: replyingToId || null, timestamp: serverTimestamp()
+        });
+        input.value = ""; cancelReply();
+    };
+
+    document.getElementById('hold-btn').onclick = async () => {
+        const newDays = (userData.days || 0) + 1;
+        await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: new Date().toDateString() });
+        loadUserData();
+    };
+
+    window.handleReaction = async (type, id) => {
+        const rRef = ref(db, `messages/room_0/${id}/${type}/${currentUser.uid}`);
+        const snap = await get(rRef);
+        await set(rRef, snap.exists() ? null : true);
+    };
 </script>
 </body>
 </html>
