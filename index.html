@@ -38,11 +38,34 @@
         #chat-send-btn { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         /* ボトムナビゲーション */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #888; cursor: pointer; flex: 1; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
-        .nav-item.highlight { color: var(--money); }
-        .nav-label { font-size: 10px; margin-top: 2px; }
+        /* ナビゲーション全体の高さを固定 */
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 65px; /* 高さを明示的に固定 */
+    background: #fff;
+    border-top: 1px solid #eee;
+}
+
+/* アイコン自体のサイズを強制的に指定 */
+.nav-icon {
+    width: 24px !important;  /* ここが重要：巨大化を防ぎます */
+    height: 24px !important;
+    fill: currentColor;
+    margin-bottom: 2px;
+    display: block; /* 余計な隙間を排除 */
+}
+
+/* ナビ項目内のレイアウト */
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
         
         /* 設定モーダル */
         #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 2rem; box-sizing: border-box; display: none; }
