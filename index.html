@@ -10,12 +10,21 @@
         .app-container { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 480px; margin: 10px; position: relative; align-self: flex-start; }
         
         /* 右上アイコン */
-        .user-menu-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; border-radius: 50%; overflow: hidden; width: 35px; height: 35px; border: 2px solid #eee; }
+        .user-menu-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; border-radius: 50%; overflow: hidden; width: 35px; height: 35px; border: 2px solid #eee; background: #eee; }
         .user-menu-btn img { width: 100%; height: 100%; object-fit: cover; }
 
         .badge { background: #eef4ff; color: var(--accent); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; margin-top: 10px; }
         #tree-display { font-size: 80px; margin: 10px 0; }
         
+        @keyframes tree-bounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3) translateY(-20px); }
+            50% { transform: scale(0.9); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .bounce-animation { animation: tree-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
         /* 将来予測のスタイル */
         .future-box { background: #fff9eb; border: 1px dashed var(--money); padding: 10px; border-radius: 12px; margin-top: 15px; }
         .future-label { font-size: 0.65rem; color: #d35400; font-weight: bold; }
@@ -27,18 +36,35 @@
         .hold-button { background-color: var(--primary); color: white; border: none; padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; transition: 0.2s; margin-top: 1.5rem; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2); }
         .hold-button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
         
-        /* 設定モーダル内のフォーム */
-        .settings-list { list-style: none; padding: 0; text-align: left; }
-        .settings-list li { padding: 12px 0; border-bottom: 1px solid #eee; }
-        .input-group { margin-bottom: 10px; }
-        .input-group label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 4px; }
-        .input-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
+        #chat-messages { height: calc(100vh - 350px); overflow-y: auto; margin-bottom: 85px; padding-right: 5px; }
+        .msg-unit { background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .user-name { font-weight: bold; font-size: 0.85rem; }
+        .msg-text { font-size: 0.9rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+        .msg-actions { display: flex; gap: 12px; font-size: 0.75rem; color: #666; margin-top: 10px; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: #f8f9fa; }
+        .action-icon { width: 16px; height: 16px; fill: currentColor; }
+        .thread-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .reply-item { font-size: 0.8rem; background: #fcfcfc; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; border-left: 3px solid #ddd; }
+
+        .input-area { position: fixed; bottom: 65px; left: 0; width: 100%; background: white; padding: 10px 15px; box-sizing: border-box; border-top: 1px solid #eee; z-index: 900; }
+        .input-row { display: flex; gap: 8px; }
+        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 0.9rem; }
+        #chat-send-btn { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .bottom-nav { display: flex; justify-content: space-around; align-items: center; height: 65px; background: #ffffff; border-top: 1px solid #eee; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-icon { width: 24px; height: 24px; fill: currentColor; margin-bottom: 2px; display: block; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-label { font-size: 10px; font-weight: bold; }
 
         #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 2rem; box-sizing: border-box; display: none; overflow-y: auto; }
-        .bottom-nav { display: flex; justify-content: space-around; align-items: center; height: 65px; background: #ffffff; border-top: 1px solid #eee; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-icon { width: 24px; height: 24px; fill: currentColor; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #888; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 4px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .settings-list { list-style: none; padding: 0; margin-top: 20px; text-align: left; }
+        .settings-list li { padding: 15px 0; border-bottom: 1px solid #eee; font-weight: bold; font-size: 0.9rem; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -46,7 +72,8 @@
 
 <div class="app-container">
     <div id="login-section">
-        <h1>🌳 カネノナルキ</h1>
+        <h1 style="margin-bottom:0.5rem;">🌳 カネノナルキ</h1>
+        <p style="color: #666; font-size: 0.85rem;">〜NISA握力養成所〜</p>
         <button class="hold-button" id="btn-login" style="background-color: var(--accent);">Googleで入門する</button>
     </div>
 
@@ -70,46 +97,89 @@
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
     </div>
 
+    <div id="chat-content" class="hidden">
+        <div id="chat-section">
+            <div id="chat-messages"></div>
+            <div class="input-area">
+                <div id="reply-label" style="font-size:0.7rem; color:var(--accent); margin-bottom:3px; display:none;">返信中: <span id="reply-target-name"></span> <span style="cursor:pointer; color:#999;" onclick="cancelReply()">[取消]</span></div>
+                <div class="input-row">
+                    <input type="text" id="chat-input" placeholder="今の心境を綴れ...">
+                    <button id="chat-send-btn">送信</button>
+                </div>
+                <label style="font-size: 0.7rem; color: #888; margin-top: 5px; display: block;">
+                    <input type="checkbox" id="mask-amount-check"> 金額を隠して投稿
+                </label>
+            </div>
+        </div>
     </div>
-
-<div id="settings-modal">
-    <h2 style="text-align:center;">⚙️ 修行設定</h2>
-    <div class="settings-list">
-        <div class="input-group">
-            <label>毎月の積立額 (円)</label>
-            <input type="number" id="set-monthly" step="1000">
-        </div>
-        <div class="input-group">
-            <label>初期投資額 (円)</label>
-            <input type="number" id="set-initial">
-        </div>
-        <div class="input-group">
-            <label>想定利回り (%)</label>
-            <input type="number" id="set-rate" step="0.1">
-        </div>
-        <div class="input-group">
-            <label>目標期間 (年)</label>
-            <input type="number" id="set-years">
-        </div>
-        <button onclick="saveSettings()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px;">設定を保存</button>
-        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-        <li style="color: var(--accent); cursor: pointer;" onclick="requestNotification()">🔔 通知設定を有効にする</li>
-        <li style="color: #e74c3c; cursor: pointer; margin-top: 20px;" onclick="auth.signOut(); location.reload();">ログアウト</li>
-    </div>
-    <button onclick="hideSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:#eee; font-weight:bold; margin-top:20px;">閉じる</button>
 </div>
 
 <nav class="bottom-nav hidden" id="global-nav">
-    <div class="nav-item active" onclick="switchTab('main')"><span class="nav-label">修行</span></div>
-    <div class="nav-item" onclick="switchTab('chat')"><span class="nav-label">道場</span></div>
+    <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
+        <svg class="nav-icon"><use href="#icon-home"></use></svg>
+        <span class="nav-label">修行</span>
+    </div>
+    <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
+        <svg class="nav-icon"><use href="#icon-chat"></use></svg>
+        <span class="nav-label">道場</span>
+    </div>
+    <div class="nav-item" onclick="showSettings()">
+        <svg class="nav-icon"><use href="#icon-settings"></use></svg>
+        <span class="nav-label">設定</span>
+    </div>
 </nav>
+
+<div id="settings-modal">
+    <h2 style="text-align:center;">⚙️ 修行設定</h2>
+    <div class="input-group">
+        <label>毎月の積立額 (円)</label>
+        <input type="number" id="set-monthly" step="1000">
+    </div>
+    <div class="input-group">
+        <label>初期投資額 (円)</label>
+        <input type="number" id="set-initial">
+    </div>
+    <div class="input-group">
+        <label>想定利回り (%)</label>
+        <input type="number" id="set-rate" step="0.1">
+    </div>
+    <div class="input-group">
+        <label>目標期間 (年)</label>
+        <input type="number" id="set-years">
+    </div>
+    <button onclick="saveSettings()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:10px; cursor:pointer;">設定を保存</button>
+    
+    <ul class="settings-list">
+        <li style="color: var(--accent); cursor: pointer;" onclick="requestNotification()">🔔 通知設定を有効にする</li>
+        <li><a href="terms.html">利用規約</a></li>
+        <li><a href="privacy.html">プライバシーポリシー</a></li>
+        <li style="color: #e74c3c; cursor: pointer;" onclick="auth.signOut(); location.reload();">ログアウト</li>
+    </ul>
+    <button onclick="hideSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:#eee; font-weight:bold; margin-top:20px; cursor:pointer;">閉じる</button>
+</div>
+
+<svg style="display: none;">
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
+    <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-5H6V7h12v2z"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></symbol>
+    <symbol id="icon-like" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></symbol>
+    <symbol id="icon-fire" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></symbol>
+</svg>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const firebaseConfig = { /* 省略: あなたのConfigを維持してください */ };
+    const firebaseConfig = {
+        apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
+        authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
+        databaseURL: "https://nisa-kane-no-naru-ki-default-rtdb.firebaseio.com",
+        projectId: "nisa-kane-no-naru-ki",
+        appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
@@ -117,36 +187,67 @@
 
     let currentUser = null;
     let userData = null;
+    let replyingToId = null;
 
+    window.switchTab = (tab) => {
+        document.getElementById('main-content').classList.add('hidden');
+        document.getElementById('chat-content').classList.add('hidden');
+        document.getElementById('nav-main').classList.remove('active');
+        document.getElementById('nav-chat').classList.remove('active');
+        if(tab === 'main') {
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('nav-main').classList.add('active');
+        } else {
+            document.getElementById('chat-content').classList.remove('hidden');
+            document.getElementById('nav-chat').classList.add('active');
+        }
+    };
+
+    window.showSettings = () => document.getElementById('settings-modal').style.display = 'block';
+    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
+
+    function getBadgeInfo(days) {
+        if (days >= 100) return { name: "伝説の投資家", emoji: "🏆" };
+        if (days >= 50) return { name: "鉄の握力", emoji: "🦾" };
+        if (days >= 30) return { name: "熟練門下生", emoji: "🥋" };
+        if (days >= 7) return { name: "一人前門下生", emoji: "⚔️" };
+        return { name: "ひよっこ門下生", emoji: "🐣" };
+    }
+
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
     onAuthStateChanged(auth, user => { 
         if(user){ 
-            currentUser = user;
+            currentUser=user; 
             document.getElementById('user-photo').src = user.photoURL;
-            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('login-section').classList.add('hidden'); 
             document.getElementById('main-content').classList.remove('hidden');
             document.getElementById('global-nav').classList.remove('hidden');
-            loadUserData();
+            loadUserData(); 
         }
     });
 
     async function loadUserData() {
         const snap = await get(ref(db, 'users/' + currentUser.uid));
-        // 初期値をセット（利回り5%、期間20年をデフォルトに）
         userData = snap.val() || { 
             days: 0, 
+            lastPressed: null, 
             monthlyAmount: 33333, 
-            initialAmount: 0, 
-            annualRate: 5, 
-            targetYears: 20 
+            initialAmount: 0,
+            annualRate: 5,
+            targetYears: 20
         };
         
-        // フォームに値を反映
+        // 設定フォームに現在の値をセット
         document.getElementById('set-monthly').value = userData.monthlyAmount;
         document.getElementById('set-initial').value = userData.initialAmount || 0;
         document.getElementById('set-rate').value = userData.annualRate || 5;
         document.getElementById('set-years').value = userData.targetYears || 20;
-        
+
         updateUI();
+        initChat();
+        if (userData.lastPressed !== new Date().toDateString()) {
+            sendReminder();
+        }
     }
 
     window.saveSettings = async () => {
@@ -163,32 +264,140 @@
         alert("設定を保存しました！未来が変わりました🌳");
     };
 
+    async function sendReminder() {
+        if (Notification.permission === "granted" && 'serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification("カネノナルキ修行の時間です", {
+                body: "今日も握力を鍛えましょう！放置は枯れる原因です🌱",
+                icon: "favicon.ico",
+                badge: "favicon.ico",
+                tag: "shugyo-reminder"
+            });
+        }
+    }
+
+    window.requestNotification = () => {
+        if (!("Notification" in window)) {
+            alert("このブラウザは通知に対応していません");
+            return;
+        }
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                alert("通知が許可されました！");
+                sendReminder(); 
+            }
+        });
+    };
+
     function updateUI() {
         const days = userData.days || 0;
+        const b = getBadgeInfo(days);
         document.getElementById('day-count').innerText = days + "日";
+        document.getElementById('user-badge').innerText = b.emoji + " " + b.name;
         
-        // --- 1. 現在の守護額 (単純計算) ---
-        const currentSaved = Math.floor(((userData.monthlyAmount / 30) * days) + (userData.initialAmount || 0));
-        document.getElementById('saved-amount').innerText = "¥" + currentSaved.toLocaleString();
-
-        // --- 2. 将来の守護予測 (複利計算) ---
+        // 現在の守護額 (1.03はボーナス係数として維持)
+        const currentAmount = Math.floor(((userData.monthlyAmount / 30) * days) * 1.03) + (userData.initialAmount || 0);
+        document.getElementById('saved-amount').innerText = "¥" + currentAmount.toLocaleString();
+        
+        // 将来の守護予測 (複利計算)
         const r = (userData.annualRate / 100) / 12; // 月利
         const n = userData.targetYears * 12; // 月数
         const p = userData.monthlyAmount; // 毎月の積立
         const initial = userData.initialAmount || 0;
-        
-        // 複利計算式: 元金 * (1+r)^n + 積立額 * [((1+r)^n - 1) / r]
         const futureTotal = (initial * Math.pow(1 + r, n)) + (p * (Math.pow(1 + r, n) - 1) / r);
         
         document.getElementById('target-years-label').innerText = userData.targetYears;
         document.getElementById('future-total').innerText = "¥" + Math.floor(futureTotal).toLocaleString();
-        
+
+        const trees = ["🌱", "🌿", "🌲", "🌳", "💹"];
+        document.getElementById('tree-display').innerText = trees[Math.min(Math.floor(days/10), 4)];
         document.getElementById('hold-btn').disabled = (userData.lastPressed === new Date().toDateString());
     }
 
-    window.showSettings = () => document.getElementById('settings-modal').style.display = 'block';
-    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-    window.switchTab = (tab) => { /* 前回同様のタブ切り替えロジック */ };
+    function initChat() {
+        onValue(query(ref(db, `messages/room_0`), limitToLast(50)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            const messages = [];
+            snap.forEach(child => { messages.unshift({ id: child.key, ...child.val() }); });
+            messages.filter(m => !m.parentId).forEach(msg => { renderMsg(msg.id, msg, container, messages); });
+        });
+    }
+
+    function renderMsg(id, msg, container, allMessages) {
+        const div = document.createElement('div');
+        div.className = 'msg-unit';
+        const likes = msg.likes ? Object.keys(msg.likes).length : 0;
+        const fires = msg.fires ? Object.keys(msg.fires).length : 0;
+        const b = getBadgeInfo(msg.days);
+        div.innerHTML = `
+            <div class="msg-header">
+                <div class="user-info"><span class="user-name">${msg.name}</span><span style="font-size:0.6rem; color:var(--accent);">${b.emoji}${b.name} (${msg.days}日)</span></div>
+                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥ ****' : '¥'+(msg.amount || 0).toLocaleString()}</div>
+            </div>
+            <div class="msg-text">${msg.text}</div>
+            <div class="msg-actions">
+                <span onclick="setReply('${id}', '${msg.name}')" style="cursor:pointer; color:var(--accent);">💬 返信</span>
+                <span class="action-btn" onclick="handleReaction('likes', '${id}')"><svg class="action-icon"><use href="#icon-like"></use></svg>${likes}</span>
+                <span class="action-btn" onclick="handleReaction('fires', '${id}')"><svg class="action-icon"><use href="#icon-fire"></use></svg>${fires}</span>
+                <span class="action-btn" onclick="shareMsg('${msg.text}', ${msg.days})"><svg class="action-icon"><use href="#icon-share"></use></svg></span>
+            </div>
+            <div id="thread-${id}" class="thread-container"></div>
+        `;
+        container.appendChild(div);
+        const thread = document.getElementById(`thread-${id}`);
+        const replies = allMessages.filter(m => m.parentId === id);
+        replies.reverse().forEach(r => { thread.innerHTML += `<div class="reply-item"><b>${r.name}:</b> ${r.text}</div>`; });
+    }
+
+    window.setReply = (id, name) => {
+        replyingToId = id;
+        document.getElementById('reply-label').style.display = 'block';
+        document.getElementById('reply-target-name').innerText = name;
+        document.getElementById('chat-input').focus();
+    };
+
+    window.cancelReply = () => { replyingToId = null; document.getElementById('reply-label').style.display = 'none'; };
+
+    window.shareMsg = (text, days) => {
+        const shareText = `【カネノナルキ】\n「${text}」\n\n握力：${days}日目\n#カネノナルキ #NISA`;
+        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https://herbyakkyoku.github.io/nisa-kane-no-naru-ki/`, '_blank');
+    };
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value) return;
+        const currentAmount = Math.floor(((userData.monthlyAmount / 30) * userData.days) * 1.03) + (userData.initialAmount || 0);
+        await push(ref(db, 'messages/room_0'), {
+            name: currentUser.displayName, text: input.value, days: userData.days, amount: currentAmount,
+            isAmountHidden: document.getElementById('mask-amount-check').checked,
+            parentId: replyingToId || null, timestamp: serverTimestamp()
+        });
+        input.value = ""; cancelReply();
+    };
+
+    document.getElementById('hold-btn').onclick = async () => {
+        const tree = document.getElementById('tree-display');
+        tree.classList.add('bounce-animation');
+        setTimeout(() => tree.classList.remove('bounce-animation'), 600);
+        const newDays = (userData.days || 0) + 1;
+        await update(ref(db, 'users/' + currentUser.uid), { days: newDays, lastPressed: new Date().toDateString() });
+        loadUserData();
+    };
+
+    window.handleReaction = async (type, id) => {
+        const rRef = ref(db, `messages/room_0/${id}/${type}/${currentUser.uid}`);
+        const snap = await get(rRef);
+        await set(rRef, snap.exists() ? null : true);
+    };
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker 登録成功:', reg.scope))
+                .catch(err => console.log('Service Worker 登録失敗:', err));
+        });
+    }
 </script>
 </body>
 </html>
