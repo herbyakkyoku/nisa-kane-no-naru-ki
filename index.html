@@ -38,7 +38,7 @@
         .hold-button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
         
         #chat-section { border-top: 2px solid #f0f4f8; margin-top: 15px; padding-top: 15px; text-align: left; }
-        #chat-messages { height: calc(100vh - 280px); overflow-y: auto; margin-bottom: 85px; padding-right: 5px; }
+        #chat-messages { height: calc(100vh - 300px); overflow-y: auto; margin-bottom: 100px; padding-right: 5px; }
         .msg-unit { background: white; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
         .msg-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .user-name { font-weight: bold; font-size: 0.85rem; }
@@ -59,10 +59,10 @@
         .nav-label { font-size: 10px; font-weight: bold; }
 
         #settings-modal { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; }
-        .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 2rem; box-sizing: border-box; border-radius: 30px 30px 0 0; }
-        .input-group { margin: 15px 0; text-align: left; }
-        .input-group label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 5px; font-weight: bold; }
-        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 1.5rem; box-sizing: border-box; border-radius: 30px 30px 0 0; max-height: 90vh; overflow-y: auto; }
+        .input-group { margin: 10px 0; text-align: left; }
+        .input-group label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 3px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 0.9rem; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -85,13 +85,13 @@
         
         <div class="main-stats">
             <div class="stat-item"><p>修行日数</p><div id="day-count">0日</div></div>
-            <div class="stat-item"><p>累計・耐えた下落額</p><div id="saved-amount">¥0</div></div>
+            <div class="stat-item"><p>累計・守護額</p><div id="saved-amount">¥0</div></div>
         </div>
 
         <div id="market-status-area" class="market-status">
-            <div class="loss-title">⚠️ 本日の暴風雨（評価損）</div>
-            <div id="today-loss-display" class="loss-detail">-0.0% (¥0)</div>
-            <div id="investment-type-label" class="investment-label">対象: 全世界株式</div>
+            <div class="loss-title">⚠️ 本日の暴風雨（自分へのダメージ）</div>
+            <div id="today-loss-display" class="loss-detail">-¥0</div>
+            <div id="investment-type-label" class="investment-label">設定銘柄の合算</div>
         </div>
 
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
@@ -107,7 +107,7 @@
                     <button id="chat-send-btn">送信</button>
                 </div>
                 <label style="font-size: 0.7rem; color: #888; margin-top: 5px; display: block;">
-                    <input type="checkbox" id="mask-amount-check"> 耐えた額を隠して投稿
+                    <input type="checkbox" id="mask-amount-check"> 累計守護額を隠して投稿
                 </label>
             </div>
         </div>
@@ -128,20 +128,35 @@
 <div id="settings-modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-top:0;">🧘 修行プラン設定</h3>
-        <div class="input-group">
-            <label>毎月の積立額 (円)</label>
-            <input type="number" id="setting-monthly" placeholder="33333">
+        <p style="font-size:0.7rem; color:#888; margin-bottom:15px;">過去の投資分も入力すると、ダメージがよりリアルになります。</p>
+        
+        <div style="background: #f0f7ff; padding: 12px; border-radius: 15px; margin-bottom: 12px;">
+            <label style="font-weight: bold; color: var(--accent); font-size: 0.85rem;">🌏 全世界株式 (オルカン)</label>
+            <div class="input-group">
+                <label>現在の評価額 (円)</label>
+                <input type="number" id="setting-ac-current" placeholder="既にある資産額">
+            </div>
+            <div class="input-group">
+                <label>毎月の積立額 (円)</label>
+                <input type="number" id="setting-ac-monthly" placeholder="33333">
+            </div>
         </div>
-        <div class="input-group">
-            <label>投資先</label>
-            <select id="setting-target">
-                <option value="all-country">eMAXIS Slim 全世界株式 (オルカン)</option>
-                <option value="sp500">eMAXIS Slim 米国株式 (S&P500)</option>
-            </select>
+
+        <div style="background: #fff9f0; padding: 12px; border-radius: 15px; margin-bottom: 15px;">
+            <label style="font-weight: bold; color: #f39c12; font-size: 0.85rem;">🇺🇸 米国株式 (S&P500)</label>
+            <div class="input-group">
+                <label>現在の評価額 (円)</label>
+                <input type="number" id="setting-sp-current" placeholder="既にある資産額">
+            </div>
+            <div class="input-group">
+                <label>毎月の積立額 (円)</label>
+                <input type="number" id="setting-sp-monthly" placeholder="50000">
+            </div>
         </div>
-        <button onclick="saveSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:var(--primary); color:white; font-weight:bold; margin-top:10px;">修行内容を更新</button>
-        <button onclick="auth.signOut(); location.reload();" style="width:100%; padding:10px; border:none; background:none; color:#e74c3c; margin-top:10px;">ログアウト</button>
-        <button onclick="hideSettings()" style="width:100%; padding:10px; border:none; background:none; color:#999;">閉じる</button>
+
+        <button onclick="saveSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer;">修行内容を更新</button>
+        <button onclick="auth.signOut(); location.reload();" style="width:100%; padding:10px; border:none; background:none; color:#e74c3c; margin-top:10px; cursor:pointer;">ログアウト</button>
+        <button onclick="hideSettings()" style="width:100%; padding:10px; border:none; background:none; color:#999; cursor:pointer;">閉じる</button>
     </div>
 </div>
 
@@ -181,16 +196,22 @@
     };
 
     window.showSettings = () => {
-        document.getElementById('setting-monthly').value = userData.monthlyAmount || 33333;
-        document.getElementById('setting-target').value = userData.investmentTarget || 'all-country';
+        document.getElementById('setting-ac-current').value = userData.ac_current || 0;
+        document.getElementById('setting-ac-monthly').value = userData.ac_monthly || 0;
+        document.getElementById('setting-sp-current').value = userData.sp_current || 0;
+        document.getElementById('setting-sp-monthly').value = userData.sp_monthly || 0;
         document.getElementById('settings-modal').style.display = 'block';
     };
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
 
     window.saveSettings = async () => {
-        const monthly = parseInt(document.getElementById('setting-monthly').value);
-        const target = document.getElementById('setting-target').value;
-        await update(ref(db, 'users/' + currentUser.uid), { monthlyAmount: monthly, investmentTarget: target });
+        const updates = {
+            ac_current: parseInt(document.getElementById('setting-ac-current').value) || 0,
+            ac_monthly: parseInt(document.getElementById('setting-ac-monthly').value) || 0,
+            sp_current: parseInt(document.getElementById('setting-sp-current').value) || 0,
+            sp_monthly: parseInt(document.getElementById('setting-sp-monthly').value) || 0,
+        };
+        await update(ref(db, 'users/' + currentUser.uid), updates);
         hideSettings();
         loadUserData();
     };
@@ -203,8 +224,6 @@
         return { name: "ひよっこ門下生", emoji: "🐣" };
     }
 
-    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
-    
     onAuthStateChanged(auth, user => { 
         if(user){ 
             currentUser = user; 
@@ -214,8 +233,10 @@
             document.getElementById('my-icon').src = user.photoURL || '';
             
             onValue(ref(db, 'market/rates'), (snap) => {
-                if(snap.exists()) marketRates = snap.val();
-                if(userData) updateUI(); 
+                if(snap.exists()) {
+                    marketRates = snap.val();
+                    if(userData) updateUI();
+                }
             });
             loadUserData();
             initChat();
@@ -229,31 +250,40 @@
 
     async function loadUserData() {
         const snap = await get(ref(db, 'users/' + currentUser.uid));
-        userData = snap.val() || { days: 0, lastPressed: null, monthlyAmount: 33333, investmentTarget: 'all-country', totalResistedLoss: 0 };
+        userData = snap.val() || { days: 0, lastPressed: null, totalResistedLoss: 0, ac_current:0, ac_monthly:0, sp_current:0, sp_monthly:0 };
         updateUI();
+    }
+
+    // --- ダメージ計算ロジック（ここが核） ---
+    function calculateTodayTotalLoss() {
+        if (!userData) return 0;
+        const days = userData.days || 0;
+        
+        // オルカン計算
+        const acBase = (userData.ac_current || 0) + ((userData.ac_monthly || 0) / 30 * days);
+        const acRate = marketRates['all-country'] || 1.0;
+        const acLoss = acRate < 1.0 ? acBase * (1.0 - acRate) : 0;
+
+        // S&P500計算
+        const spBase = (userData.sp_current || 0) + ((userData.sp_monthly || 0) / 30 * days);
+        const spRate = marketRates['sp500'] || 1.0;
+        const spLoss = spRate < 1.0 ? spBase * (1.0 - spRate) : 0;
+
+        return Math.floor(acLoss + spLoss);
     }
 
     function updateUI() {
         const days = userData.days || 0;
         const b = getBadgeInfo(days);
+        const todayLoss = calculateTodayTotalLoss();
+
         document.getElementById('day-count').innerText = days + "日";
         document.getElementById('user-badge').innerText = b.emoji + " " + b.name;
         document.getElementById('saved-amount').innerText = "¥" + (userData.totalResistedLoss || 0).toLocaleString();
 
-        // --- 設定に応じた下落情報の表示 ---
-        const target = userData.investmentTarget || 'all-country';
-        const rate = marketRates[target] || 1.0;
         const statusArea = document.getElementById('market-status-area');
-        const targetLabel = target === 'sp500' ? '米国株式 (S&P500)' : '全世界株式 (オルカン)';
-        document.getElementById('investment-type-label').innerText = `対象: ${targetLabel}`;
-
-        if (rate < 1.0) {
-            const lossPercent = ((1.0 - rate) * 100).toFixed(1);
-            // 修行日数に基づいた概算の積立総額で計算
-            const totalInvestment = (userData.monthlyAmount / 30) * Math.max(days, 1);
-            const todayLossVal = Math.floor(totalInvestment * (1.0 - rate));
-            
-            document.getElementById('today-loss-display').innerText = `-${lossPercent}% (¥${todayLossVal.toLocaleString()})`;
+        if (todayLoss > 0) {
+            document.getElementById('today-loss-display').innerText = `-¥${todayLoss.toLocaleString()}`;
             statusArea.classList.add('active');
         } else {
             statusArea.classList.remove('active');
@@ -265,15 +295,7 @@
     }
 
     document.getElementById('hold-btn').onclick = async () => {
-        const target = userData.investmentTarget || 'all-country';
-        const rate = marketRates[target] || 1.0;
-        
-        let todayLoss = 0;
-        if (rate < 1.0) {
-            const totalInvestment = (userData.monthlyAmount / 30) * Math.max(userData.days, 1);
-            todayLoss = Math.floor(totalInvestment * (1.0 - rate));
-        }
-
+        const todayLoss = calculateTodayTotalLoss();
         const newDays = (userData.days || 0) + 1;
         const newTotalLoss = (userData.totalResistedLoss || 0) + todayLoss;
 
@@ -302,12 +324,12 @@
     function renderMsg(id, msg, container) {
         const div = document.createElement('div');
         div.className = 'msg-unit';
-        const b = getBadgeInfo(msg.days);
+        const b = getBadgeInfo(msg.days || 0);
         const likes = msg.likes ? Object.keys(msg.likes).length : 0;
         div.innerHTML = `
             <div class="msg-header">
                 <div><span class="user-name">${msg.name}</span> <span style="font-size:0.6rem; color:var(--accent);">${b.emoji}${msg.days}日目</span></div>
-                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥****' : '耐えた額: ¥'+(msg.amount || 0).toLocaleString()}</div>
+                <div style="font-size:0.7rem; color:#999;">${msg.isAmountHidden ? '¥****' : '守護額: ¥'+(msg.amount || 0).toLocaleString()}</div>
             </div>
             <div class="msg-text">${msg.text}</div>
             <div class="msg-actions">
@@ -319,7 +341,7 @@
 
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
-        if(!input.value) return;
+        if(!input.value.trim()) return;
         await push(ref(db, 'messages/room_0'), {
             name: currentUser.displayName, text: input.value, days: userData.days, 
             amount: userData.totalResistedLoss || 0,
@@ -335,6 +357,8 @@
         const snap = await get(rRef);
         await set(rRef, snap.exists() ? null : true);
     };
+
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
 </html>
