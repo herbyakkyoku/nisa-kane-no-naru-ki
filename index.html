@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>みんなのNISA - ポートフォリオ公開SNS</title>
+    <title>みんなのNISA - ポートフォリオSNS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #2ecc71; --sp-color: #f39c12; --cash-color: #bdc3c7; --accent: #4285F4; --bg: #f8fafc; }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
         .app-container { width: 100%; max-width: 480px; position: relative; }
         
+        /* Header */
         .header { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         .logo { font-size: 1.1rem; font-weight: 900; color: var(--primary); }
         .user-icon { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #eee; object-fit: cover; background: #eee; cursor: pointer; }
@@ -17,6 +18,7 @@
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .chart-box { position: relative; width: 240px; height: 240px; margin: 20px auto; }
         
+        /* Stats */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .stat-box { background: #f1f5f9; padding: 12px; border-radius: 12px; text-align: center; }
         .stat-label { font-size: 0.65rem; color: #64748b; display: block; margin-bottom: 4px; }
@@ -25,17 +27,34 @@
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 0 15px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         .btn-primary:active { opacity: 0.8; transform: scale(0.98); }
 
+        /* Navigation */
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
         .nav-label { font-size: 0.6rem; font-weight: bold; }
 
+        /* Board Style (Added for Portfolio icons) */
         #chat-messages { padding: 10px; }
-        .msg-card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 12px; border: 1px solid #f1f5f9; }
+        .msg-card { 
+            background: white; 
+            border-radius: 16px; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            border: 1px solid #f1f5f9; 
+            display: flex; 
+            gap: 12px; 
+            align-items: flex-start; 
+        }
+        .mini-chart-wrapper { width: 50px; height: 50px; flex-shrink: 0; position: relative; }
+        .msg-body { flex: 1; }
+        .msg-info { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; line-height: 1.2; }
+        .msg-text { font-size: 0.9rem; line-height: 1.4; color: #334155; }
+
         .input-bar { position: fixed; bottom: 70px; width: 100%; max-width: 480px; background: white; padding: 12px 15px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; box-sizing: border-box; }
         #chat-input { flex: 1; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; outline: none; background: #f8fafc; }
 
+        /* Modal */
         #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         .input-item { margin-bottom: 15px; }
@@ -128,9 +147,11 @@
     let currentUser = null;
     let myChart = null;
 
+    // Chart.js Center Text Plugin
     const centerTextPlugin = {
         id: 'centerText',
         afterDraw(chart) {
+            if (!chart.config.options.elements?.center) return;
             const { ctx, chartArea: { width, height } } = chart;
             ctx.save();
             ctx.textAlign = 'center';
@@ -146,6 +167,7 @@
     };
     Chart.register(centerTextPlugin);
 
+    // Switch Tabs
     window.switchTab = (tab) => {
         document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
@@ -154,6 +176,7 @@
         if (tab === 'main') loadUserData();
     };
 
+    // Auth State
     onAuthStateChanged(auth, user => {
         if(user) {
             currentUser = user;
@@ -177,12 +200,12 @@
         updateMyUI(snap.val() || {});
     }
 
+    // Update Main UI Chart
     function updateMyUI(data) {
         const ac = parseInt(data.ac) || 0;
         const sp = parseInt(data.sp) || 0;
         const cash = parseInt(data.cash) || 0;
         const total = ac + sp + cash;
-
         const rate = total ? (((ac * 0.05) + (sp * 0.08)) / total * 100).toFixed(1) : "0.0";
 
         document.getElementById('total-amount-val').innerText = `¥${total.toLocaleString()}`;
@@ -190,31 +213,92 @@
 
         const canvas = document.getElementById('myChart');
         if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
         if (myChart) myChart.destroy();
         
-        myChart = new Chart(ctx, {
+        myChart = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['全世界', 'S&P500', '現金'],
-                datasets: [{ 
-                    data: [ac, sp, cash], 
-                    backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7'], 
-                    borderWidth: 0 
-                }]
+                datasets: [{ data: [ac, sp, cash], backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7'], borderWidth: 0 }]
             },
             options: { 
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%', 
+                responsive: true, maintainAspectRatio: false, cutout: '75%', 
                 plugins: { legend: { display: false } },
                 elements: { center: { text: rate + "%" } } 
             }
         });
     }
 
-    // 保存時に10000倍する
+    // Helper: Create Board Mini Chart
+    function createMiniChart(canvasId, ac, sp, cash) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{ data: [ac, sp, cash], backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7'], borderWidth: 0 }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
+        });
+    }
+
+    // Initialize Board
+    function initChat() {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            const drawTasks = [];
+
+            snap.forEach(child => {
+                const m = child.val();
+                const mid = child.key;
+                const total = (m.ac||0) + (m.sp||0) + (m.cash||0);
+                const ratio = total ? Math.round(((m.ac + m.sp) / total) * 100) : 0;
+                const amtLabel = m.showAmount ? `¥${total.toLocaleString()}` : "非公開";
+                const canvasId = `chart-${mid}`;
+
+                const div = document.createElement('div');
+                div.className = 'msg-card';
+                div.innerHTML = `
+                    <div class="mini-chart-wrapper">
+                        <canvas id="${canvasId}"></canvas>
+                    </div>
+                    <div class="msg-body">
+                        <div class="msg-info">
+                            <strong>${m.nickname}</strong> / 比率: ${ratio}% / 資産: ${amtLabel}
+                        </div>
+                        <div class="msg-text">${m.text}</div>
+                    </div>
+                `;
+                container.prepend(div);
+                drawTasks.push({ id: canvasId, ac: m.ac||0, sp: m.sp||0, cash: m.cash||0 });
+            });
+
+            // Draw charts after DOM update
+            drawTasks.forEach(t => createMiniChart(t.id, t.ac, t.sp, t.cash));
+        });
+    }
+
+    // Chat Send
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        const snap = await get(ref(db, `users/${currentUser.uid}`));
+        const u = snap.val() || {};
+        await push(ref(db, 'messages/room_0'), {
+            nickname: u.nickname || currentUser.displayName,
+            text: input.value,
+            ac: u.ac||0, sp: u.sp||0, cash: u.cash||0,
+            showAmount: u.showAmount||false,
+            timestamp: serverTimestamp()
+        });
+        input.value = "";
+    };
+
+    // Settings logic
     window.saveSettings = async () => {
         const updates = {
             nickname: document.getElementById('set-nickname').value || currentUser.displayName,
@@ -227,7 +311,6 @@
         hideSettings();
     };
 
-    // 読み込み時に10000で割って表示する
     window.showSettings = async () => {
         const snap = await get(ref(db, `users/${currentUser.uid}`));
         const d = snap.val() || {};
@@ -240,36 +323,7 @@
     };
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
 
-    function initChat() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = "";
-            snap.forEach(child => {
-                const m = child.val();
-                const total = (m.ac||0) + (m.sp||0) + (m.cash||0);
-                const ratio = total ? Math.round(((m.ac + m.sp) / total) * 100) : 0;
-                const amt = m.showAmount ? `(総資産:¥${total.toLocaleString()})` : "";
-                const div = document.createElement('div');
-                div.className = 'msg-card';
-                div.innerHTML = `<div style="font-size:0.7rem; color:#64748b; margin-bottom:5px;"><strong>${m.nickname}</strong> / 金融比率: ${ratio}% ${amt}</div><div style="font-size:0.9rem;">${m.text}</div>`;
-                container.prepend(div);
-            });
-        });
-    }
-
-    document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim()) return;
-        const snap = await get(ref(db, `users/${currentUser.uid}`));
-        const u = snap.val() || {};
-        await push(ref(db, 'messages/room_0'), {
-            nickname: u.nickname || currentUser.displayName,
-            text: input.value, ac: u.ac||0, sp: u.sp||0, cash: u.cash||0,
-            showAmount: u.showAmount||false, timestamp: serverTimestamp()
-        });
-        input.value = "";
-    };
-
+    // Login logic
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
