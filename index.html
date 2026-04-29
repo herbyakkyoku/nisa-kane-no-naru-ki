@@ -247,56 +247,63 @@
 
     // Initialize Board
     function initChat() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = "";
-            const drawTasks = [];
+    onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = "";
+        const drawTasks = [];
 
-            snap.forEach(child => {
-                const m = child.val();
-                const mid = child.key;
-                const total = (m.ac||0) + (m.sp||0) + (m.cash||0);
-                const ratio = total ? Math.round(((m.ac + m.sp) / total) * 100) : 0;
-                const amtLabel = m.showAmount ? `¥${total.toLocaleString()}` : "非公開";
-                const canvasId = `chart-${mid}`;
+        snap.forEach(child => {
+            const m = child.val();
+            const mid = child.key;
+            const canvasId = `chart-${mid}`;
 
-                const div = document.createElement('div');
-                div.className = 'msg-card';
-                div.innerHTML = `
-                    <div class="mini-chart-wrapper">
-                        <canvas id="${canvasId}"></canvas>
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="mini-chart-wrapper">
+                    <canvas id="${canvasId}"></canvas>
+                </div>
+                <div class="msg-body">
+                    <div class="msg-info">
+                        <strong>${m.nickname}</strong> / 比率: ${Math.round((( (m.ac||0) + (m.sp||0) ) / ((m.ac||0) + (m.sp||0) + (m.cash||0) || 1)) * 100)}%
                     </div>
-                    <div class="msg-body">
-                        <div class="msg-info">
-                            <strong>${m.nickname}</strong> / 比率: ${ratio}% / 資産: ${amtLabel}
-                        </div>
-                        <div class="msg-text">${m.text}</div>
-                    </div>
-                `;
-                container.prepend(div);
-                drawTasks.push({ id: canvasId, ac: m.ac||0, sp: m.sp||0, cash: m.cash||0 });
-            });
-
-            // Draw charts after DOM update
-            drawTasks.forEach(t => createMiniChart(t.id, t.ac, t.sp, t.cash));
+                    <div class="msg-text">${m.text}</div>
+                </div>
+            `;
+            container.prepend(div);
+            drawTasks.push({ id: canvasId, ac: m.ac||0, sp: m.sp||0, cash: m.cash||0 });
         });
-    }
+
+        // DOMへの反映を確実にするため、少し待ってから描画
+        setTimeout(() => {
+            drawTasks.forEach(t => createMiniChart(t.id, t.ac, t.sp, t.cash));
+        }, 50); 
+    });
+}
+
 
     // Chat Send
     document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim()) return;
-        const snap = await get(ref(db, `users/${currentUser.uid}`));
-        const u = snap.val() || {};
-        await push(ref(db, 'messages/room_0'), {
-            nickname: u.nickname || currentUser.displayName,
-            text: input.value,
-            ac: u.ac||0, sp: u.sp||0, cash: u.cash||0,
-            showAmount: u.showAmount||false,
-            timestamp: serverTimestamp()
-        });
-        input.value = "";
-    };
+    const input = document.getElementById('chat-input');
+    if(!input.value.trim()) return;
+
+    // 自分の最新の資産データを取得
+    const snap = await get(ref(db, `users/${currentUser.uid}`));
+    const u = snap.val() || {};
+
+    await push(ref(db, 'messages/room_0'), {
+        nickname: u.nickname || currentUser.displayName,
+        text: input.value,
+        ac: u.ac || 0,
+        sp: u.sp || 0,
+        cash: u.cash || 0,
+        showAmount: u.showAmount || false,
+        timestamp: serverTimestamp()
+    });
+    input.value = "";
+    // pushするとonValueが自動で走りますが、描画が漏れる場合はここでinitChat()を呼ぶのも手です
+};
+
 
     // Settings logic
     window.saveSettings = async () => {
