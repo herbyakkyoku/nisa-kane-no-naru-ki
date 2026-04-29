@@ -2,264 +2,322 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>みんなのNISA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>みんなのNISA - ポートフォリオSNS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 既存のスタイルを維持 */
-        :root { --primary: #2ecc71; --bg: #f8f9fa; --text: #2d3436; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; }
-        .header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
-        .logo { color: var(--primary); font-weight: 900; font-size: 1.2rem; }
-        .main-card { background: #fff; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
-        .chart-container { position: relative; height: 260px; margin: 20px auto; width: 260px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .stat-item { background: #f1f3f5; padding: 12px; border-radius: 12px; }
-        .stat-label { font-size: 0.75rem; color: #636e72; margin-bottom: 4px; }
-        .stat-value { font-weight: 800; font-size: 1.1rem; }
-        .btn-primary { background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        :root { --primary: #2ecc71; --sp-color: #f39c12; --cash-color: #bdc3c7; --accent: #4285F4; --bg: #f8fafc; }
+        body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
+        .app-container { width: 100%; max-width: 480px; position: relative; }
         
-        /* 掲示板スタイル */
-        .msg-card { background: #fff; margin: 10px 15px; padding: 15px; border-radius: 16px; border: 1px solid #eee; }
-        .msg-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; color: #636e72; }
-        .mini-chart { width: 50px; height: 50px; flex-shrink: 0; }
-        
-        /* 設定モーダル */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-        .modal-content { background: #fff; width: 90%; max-width: 450px; margin: 40px auto; border-radius: 24px; padding: 25px; max-height: 85vh; overflow-y: auto; }
-        .input-group { margin-bottom: 20px; }
-        .input-item { margin-bottom: 15px; }
-        .input-item label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
-        .stock-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-        .btn-add { background: #f1f3f5; border: none; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 20px; font-weight: 700; }
+        .header { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.1rem; font-weight: 900; color: var(--primary); }
+        .user-icon { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #eee; object-fit: cover; background: #eee; cursor: pointer; }
 
-        /* 下部ナビ */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #eee; padding: 10px 0; }
-        .nav-item { flex: 1; text-align: center; font-size: 0.7rem; color: #b2bec3; cursor: pointer; }
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-box { position: relative; width: 240px; height: 240px; margin: 20px auto; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-box { background: #f1f5f9; padding: 12px; border-radius: 12px; text-align: center; }
+        .stat-label { font-size: 0.65rem; color: #64748b; display: block; margin-bottom: 4px; }
+        .stat-value { font-size: 0.9rem; font-weight: bold; }
+
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 0 15px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; }
+
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
+        .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
+        .nav-label { font-size: 0.6rem; font-weight: bold; }
+
+        #chat-messages { padding: 10px; }
+        .msg-card { background: white; border-radius: 16px; padding: 12px; margin-bottom: 12px; border: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: flex-start; }
+        .mini-chart-wrapper { width: 50px; height: 50px; flex-shrink: 0; position: relative; }
+        .msg-body { flex: 1; }
+        .msg-info { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; line-height: 1.2; }
+        .msg-text { font-size: 0.9rem; line-height: 1.4; color: #334155; }
+
+        .input-bar { position: fixed; bottom: 70px; width: 100%; max-width: 480px; background: white; padding: 12px 15px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; box-sizing: border-box; }
+        #chat-input { flex: 1; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; outline: none; background: #f8fafc; }
+
+        #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
+        .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
+        .input-item { margin-bottom: 15px; }
+        .input-item label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        .input-item input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        
+        .stock-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .stock-row input[type="text"] { flex: 2; }
+        .stock-row input[type="number"] { flex: 1; }
+        .btn-remove { background: #ff7675; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; line-height: 1; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+<div class="app-container">
+    <header class="header">
         <div class="logo">みんなのNISA</div>
-        <div id="user-icon" style="width:32px; height:32px; border-radius:50%; background:#d1ccc0; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900;">航</div>
+        <img id="user-avatar" class="user-icon hidden" onclick="showSettings()" src="" onerror="this.src='https://ui-avatars.com/api/?name=User'" alt="me">
+    </header>
+
+    <div id="login-section" class="card" style="margin-top: 50px; text-align: center;">
+        <h2 style="margin-top:0;">ポートフォリオを公開しよう</h2>
+        <button id="btn-login" class="btn-primary" style="background:#333; width:100%; margin:0;">Googleでログイン</button>
     </div>
 
-    <div id="page-my" class="page">
-        <div class="main-card">
-            <div style="font-size: 0.8rem; color: #636e72;">あなたのポートフォリオ比率</div>
-            <div class="chart-container">
+    <div id="main-content" class="hidden">
+        <div class="card">
+            <div style="text-align: center; font-size: 0.7rem; color: #64748b;">あなたのポートフォリオ比率</div>
+            <div class="chart-box">
                 <canvas id="myChart"></canvas>
             </div>
             <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">リスク資産比率</div>
-                    <div id="risk-ratio-val" class="stat-value">--%</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">合計資産</div>
-                    <div id="total-amount-val" class="stat-value">¥0</div>
-                </div>
+                <div class="stat-box"><span class="stat-label">リスク資産比率</span><div id="risk-ratio-val" class="stat-value">0%</div></div>
+                <div class="stat-box"><span class="stat-label">合計資産</span><div id="total-amount-val" class="stat-value">¥0</div></div>
             </div>
-            <button class="btn-primary" style="margin-top:20px;" onclick="showSettings()">ポートフォリオを編集する</button>
+        </div>
+        <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
+    </div>
+
+    <div id="chat-content" class="hidden">
+        <div id="chat-messages"></div>
+        <div class="input-bar">
+            <input type="text" id="chat-input" placeholder="今の相場はどう？">
+            <button id="chat-send-btn" style="background:var(--accent); color:white; border:none; padding:0 20px; border-radius:10px; font-weight:bold;">送信</button>
         </div>
     </div>
 
-    <div id="page-board" class="page" style="display:none;">
-        <div id="message-list" style="padding-top:10px;"></div>
-        <div style="position:fixed; bottom:70px; width:100%; background:#fff; padding:10px; border-top:1px solid #eee; display:flex; gap:10px; box-sizing:border-box;">
-            <input type="text" id="chat-input" placeholder="今の相場はどう？" style="flex:1;">
-            <button id="chat-send-btn" style="background:#4285F4; color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:bold;">送信</button>
+    <nav class="nav-bar hidden" id="global-nav">
+        <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
+            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 4 4 7-7"/></svg>
+            <span class="nav-label">マイ資産</span>
         </div>
-    </div>
-
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin-top:0;">ポートフォリオ設定</h3>
-            <div class="input-group">
-                <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
-                <div class="input-item" style="display:flex; align-items:center; justify-content:space-between; background:#f1f3f5; padding:10px; border-radius:10px;">
-                    <label style="margin:0;">合計金額を公開する</label>
-                    <input type="checkbox" id="set-show-amount" style="width:auto;">
-                </div>
-                <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
-                <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
-                <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
-                <div class="input-item"><label>合計評価損益 (円)</label><input type="number" id="set-profit" placeholder="例: 150000"></div>
-                
-                <label style="font-size:0.85rem; font-weight:700;">個別株・その他</label>
-                <div id="stock-list-container"></div>
-                <button class="btn-add" onclick="addStockRow()">＋ 銘柄を追加する</button>
-            </div>
-            <button class="btn-primary" onclick="saveSettings()">保存</button>
+        <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
+            <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="nav-label">掲示板</span>
         </div>
-    </div>
-
-    <nav class="nav-bar">
-        <div class="nav-item active" onclick="switchPage('my')"><div>📉</div>マイ資産</div>
-        <div class="nav-item" onclick="switchPage('board')"><div>💬</div>掲示板</div>
     </nav>
+</div>
+
+<div id="settings-modal" onclick="hideSettings()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-top:0;">ポートフォリオ設定</h3>
+        <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
+        <div class="input-item" style="background:#f1f5f9; padding:10px; border-radius:10px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="set-show-amount"> 合計金額を公開する
+            </label>
+        </div>
+        <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
+        <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
+        <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
+        <div class="input-item"><label>合計評価損益 (円)</label><input type="number" id="set-profit" placeholder="例: 150000"></div>
+        
+        <div class="input-item">
+            <label>個別株・その他</label>
+            <div id="stock-list-container"></div>
+            <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 銘柄を追加する</button>
+        </div>
+
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin:20px 0 0 0;">保存</button>
+    </div>
+</div>
 
 <script type="module">
-    // Firebaseのインポートと初期化（適宜設定してください）
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, update, push, onValue, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const firebaseConfig = { /* あなたのコンフィグ */ };
+    const firebaseConfig = {
+        apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
+        authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
+        databaseURL: "https://nisa-kane-no-naru-ki-default-rtdb.firebaseio.com",
+        projectId: "nisa-kane-no-naru-ki",
+        appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
     let currentUser = null;
     let myChart = null;
 
-    // カラーパレット
     const stockColors = ['#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
 
-    // --- ロジック：データ集計とソート ---
-    function prepareSortedData(data) {
-        const ac = parseInt(data.ac) || 0;
-        const sp = parseInt(data.sp) || 0;
-        const cash = parseInt(data.cash) || 0;
+    // --- ロジック：データを金額順にソートしてChart.js用の配列を作る関数 ---
+    function getSortedChartData(data) {
+        const ac = (parseInt(data.ac) || 0) * 10000;
+        const sp = (parseInt(data.sp) || 0) * 10000;
+        const cash = (parseInt(data.cash) || 0) * 10000;
         const stocks = data.stocks || [];
 
-        // 1. リスク資産（全世界・SP500・個別株）をリスト化
-        let riskAssets = [
-            { name: '全世界', val: ac, color: '#2ecc71' },
-            { name: 'S&P500', val: sp, color: '#f39c12' }
+        // 全資産を1つの配列にまとめる
+        let list = [
+            { label: '全世界', value: ac, color: '#2ecc71' },
+            { label: 'S&P500', value: sp, color: '#f39c12' }
         ];
 
         stocks.forEach((s, i) => {
-            riskAssets.push({
-                name: s.name,
-                val: (parseInt(s.val) || 0) * 10000,
+            list.push({
+                label: s.name,
+                value: (parseInt(s.val) || 0) * 10000,
                 color: stockColors[i % stockColors.length]
             });
         });
 
-        // 2. リスク資産を金額が大きい順にソート
-        riskAssets.sort((a, b) => b.val - a.val);
+        // 金額が大きい順にソート
+        list.sort((a, b) => b.value - a.value);
 
-        // 3. 最後に現金を結合
-        const finalAssets = [...riskAssets, { name: '現金', val: cash, color: '#bdc3c7' }];
-
-        const total = finalAssets.reduce((sum, a) => sum + a.val, 0);
-        const riskTotal = riskAssets.reduce((sum, a) => sum + a.val, 0);
+        // 最後に現金を結合（現金は一番最後に固定したい場合はここを調整）
+        list.push({ label: '現金', value: cash, color: '#bdc3c7' });
 
         return {
-            labels: finalAssets.map(a => a.name),
-            values: finalAssets.map(a => a.val),
-            colors: finalAssets.map(a => a.color),
-            total,
-            riskTotal
+            labels: list.map(item => item.label),
+            values: list.map(item => item.value),
+            colors: list.map(item => item.color),
+            total: list.reduce((sum, item) => sum + item.value, 0),
+            riskTotal: list.filter(item => item.label !== '現金').reduce((sum, item) => sum + item.value, 0)
         };
     }
 
-    // --- UI：中央に「利益額」を表示するプラグイン ---
     const centerTextPlugin = {
         id: 'centerText',
         afterDraw(chart) {
             if (!chart.config.options.elements?.center) return;
             const { ctx, chartArea: { width, height } } = chart;
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // ラベル
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillStyle = '#64748b';
+            ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#64748b';
             ctx.fillText('評価損益', width / 2, height / 2 - 15);
             
-            // 金額表示
-            const profitVal = chart.config.options.elements.center.value;
-            ctx.font = '900 22px sans-serif';
-            ctx.fillStyle = profitVal >= 0 ? '#ff7675' : '#4285F4'; // プラス赤、マイナス青
-            const sign = profitVal >= 0 ? '+' : '';
-            ctx.fillText(`${sign}¥${profitVal.toLocaleString()}`, width / 2, height / 2 + 12);
+            const profit = chart.config.options.elements.center.value;
+            ctx.font = '900 20px sans-serif'; 
+            ctx.fillStyle = profit >= 0 ? '#ff7675' : '#4285F4';
+            const sign = profit >= 0 ? '+' : '';
+            ctx.fillText(`${sign}¥${profit.toLocaleString()}`, width / 2, height / 2 + 12);
             ctx.restore();
         }
     };
     Chart.register(centerTextPlugin);
 
-    // --- 画面更新ロジック ---
+    window.switchTab = (tab) => {
+        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
+        document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`nav-${tab}`).classList.add('active');
+        if (tab === 'main') loadUserData();
+    };
+
+    onAuthStateChanged(auth, user => {
+        if(user) {
+            currentUser = user;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('global-nav').classList.remove('hidden');
+            const avatar = document.getElementById('user-avatar');
+            avatar.classList.remove('hidden'); avatar.src = user.photoURL;
+            onValue(ref(db, `users/${currentUser.uid}`), (snap) => updateMyUI(snap.val() || {}));
+            initChat();
+        }
+    });
+
+    async function loadUserData() {
+        if(!currentUser) return;
+        const snap = await get(ref(db, `users/${currentUser.uid}`));
+        updateMyUI(snap.val() || {});
+    }
+
+    window.addStockRow = (name = "", val = "") => {
+        const container = document.getElementById('stock-list-container');
+        const row = document.createElement('div');
+        row.className = 'stock-row';
+        row.innerHTML = `<input type="text" placeholder="銘柄名" value="${name}"><input type="number" placeholder="万円" value="${val}"><button class="btn-remove" onclick="this.parentElement.remove()">✕</button>`;
+        container.appendChild(row);
+    };
+
     function updateMyUI(data) {
-        const sorted = prepareSortedData(data);
+        const sorted = getSortedChartData(data);
         const profit = parseInt(data.profit) || 0;
 
         document.getElementById('total-amount-val').innerText = data.showAmount ? `¥${sorted.total.toLocaleString()}` : "非公開";
         document.getElementById('risk-ratio-val').innerText = `${sorted.total ? Math.round((sorted.riskTotal / sorted.total) * 100) : 0}%`;
 
         const canvas = document.getElementById('myChart');
+        if (!canvas) return;
         if (myChart) myChart.destroy();
         myChart = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
-            data: {
-                labels: sorted.labels,
-                datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, cutout: '75%',
+            data: { labels: sorted.labels, datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '75%', 
                 plugins: { legend: { display: false } },
-                elements: { center: { value: profit } }
+                elements: { center: { value: profit } } 
             }
         });
     }
 
-    // --- 掲示板メッセージ表示 ---
-    onValue(ref(db, 'messages/room_0'), (snapshot) => {
-        const list = document.getElementById('message-list');
-        list.innerHTML = "";
-        snapshot.forEach((child) => {
-            const m = child.val();
-            const sorted = prepareSortedData(m);
-            const card = document.createElement('div');
-            card.className = "msg-card";
-            const canvasId = `chart-${child.key}`;
-            const amountText = m.showAmount ? ` / 資産: ¥${sorted.total.toLocaleString()}` : " / 資産: 非公開";
-            const profitText = m.profit ? ` / 損益: ${m.profit >= 0 ? '+' : ''}${m.profit.toLocaleString()}` : "";
-
-            card.innerHTML = `
-                <div class="msg-header">
-                    <div class="mini-chart"><canvas id="${canvasId}"></canvas></div>
-                    <div>
-                        <div style="font-weight:bold; color:#2d3436;">${m.nickname} <span style="font-weight:normal; font-size:0.7rem; color:#b2bec3;">/ 比率: ${Math.round((sorted.riskTotal/sorted.total)*100)}%${amountText}${profitText}</span></div>
-                        <div style="margin-top:4px; font-size:1rem; color:#2d3436;">${m.text}</div>
-                    </div>
-                </div>
-            `;
-            list.prepend(card);
-            
-            // ミニチャート描画（ここでもソート済みデータを使用）
-            new Chart(document.getElementById(canvasId).getContext('2d'), {
-                type: 'doughnut',
-                data: { datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }] },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, cutout: '65%',
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                }
-            });
+    function createMiniChart(canvasId, data) {
+        const sorted = getSortedChartData(data);
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: { datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
         });
-    });
+    }
 
-    // --- その他、基本的な関数 ---
-    window.addStockRow = (name="", val="") => {
-        const container = document.getElementById('stock-list-container');
-        const row = document.createElement('div');
-        row.className = 'stock-row';
-        row.innerHTML = `<input type="text" placeholder="銘柄名" value="${name}" style="flex:2;">
-                         <input type="number" placeholder="万円" value="${val}" style="flex:1;">
-                         <button onclick="this.parentElement.remove()" style="border:none; background:none; color:#ff7675; font-size:1.2rem;">&times;</button>`;
-        container.appendChild(row);
+    function initChat() {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            const drawTasks = [];
+            snap.forEach(child => {
+                const m = child.val();
+                const sorted = getSortedChartData(m);
+                const profitText = m.profit ? ` / 損益: ${m.profit >= 0 ? '+' : ''}${m.profit.toLocaleString()}` : "";
+                const amountText = m.showAmount ? ` / 資産: ¥${sorted.total.toLocaleString()}` : " / 資産: 非公開";
+                
+                const div = document.createElement('div');
+                div.className = 'msg-card';
+                div.innerHTML = `
+                    <div class="mini-chart-wrapper"><canvas id="chart-${child.key}"></canvas></div>
+                    <div class="msg-body">
+                        <div class="msg-info"><strong>${m.nickname}</strong><br>リスク比: ${Math.round((sorted.riskTotal/sorted.total)*100)}%${amountText}${profitText}</div>
+                        <div class="msg-text">${m.text}</div>
+                    </div>`;
+                container.prepend(div);
+                drawTasks.push({ id: `chart-${child.key}`, data: m });
+            });
+            setTimeout(() => drawTasks.forEach(t => createMiniChart(t.id, t.data)), 50);
+        });
+    }
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        const snap = await get(ref(db, `users/${currentUser.uid}`));
+        const u = snap.val() || {};
+        await push(ref(db, 'messages/room_0'), {
+            nickname: u.nickname || currentUser.displayName, text: input.value,
+            ac: u.ac ? u.ac/10000 : 0, sp: u.sp ? u.sp/10000 : 0, cash: u.cash ? u.cash/10000 : 0, 
+            stocks: u.stocks||[], profit: u.profit || 0, showAmount: u.showAmount || false,
+            timestamp: serverTimestamp()
+        });
+        input.value = "";
     };
 
     window.saveSettings = async () => {
         const stocks = Array.from(document.querySelectorAll('.stock-row')).map(row => ({
-            name: row.querySelectorAll('input')[0].value,
-            val: row.querySelectorAll('input')[1].value
+            name: row.querySelectorAll('input')[0].value, val: row.querySelectorAll('input')[1].value
         })).filter(s => s.name && s.val);
-
         await update(ref(db, `users/${currentUser.uid}`), {
             nickname: document.getElementById('set-nickname').value || currentUser.displayName,
             showAmount: document.getElementById('set-show-amount').checked,
@@ -269,7 +327,7 @@
             profit: parseInt(document.getElementById('set-profit').value) || 0,
             stocks: stocks
         });
-        document.getElementById('settings-modal').style.display = 'none';
+        hideSettings();
     };
 
     window.showSettings = async () => {
@@ -286,25 +344,8 @@
         if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
         document.getElementById('settings-modal').style.display = 'block';
     };
-
-    window.switchPage = (page) => {
-        document.getElementById('page-my').style.display = page === 'my' ? 'block' : 'none';
-        document.getElementById('page-board').style.display = page === 'board' ? 'block' : 'none';
-        document.querySelectorAll('.nav-item').forEach((el, i) => {
-            el.classList.toggle('active', (page === 'my' && i === 0) || (page === 'board' && i === 1));
-        });
-    };
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            onValue(ref(db, `users/${user.uid}`), (snap) => {
-                if (snap.exists()) updateMyUI(snap.val());
-            });
-        } else {
-            signInWithPopup(auth, new GoogleAuthProvider());
-        }
-    });
+    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
 </html>
