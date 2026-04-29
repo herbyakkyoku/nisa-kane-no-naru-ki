@@ -6,7 +6,7 @@
     <title>みんなのNISA - ポートフォリオSNS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2ecc71; --sp-color: #f39c12; --cash-color: #bdc3c7; --accent: #4285F4; --bg: #f8fafc; }
+        :root { --primary: #2ecc71; --sp-color: #f39c12; --cash-color: #bdc3c7; --stock-color: #9b59b6; --accent: #4285F4; --bg: #f8fafc; }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
         .app-container { width: 100%; max-width: 480px; position: relative; }
         
@@ -25,7 +25,7 @@
         .stat-value { font-size: 0.9rem; font-weight: bold; }
 
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 0 15px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-        .btn-primary:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; }
 
         /* Navigation */
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
@@ -34,18 +34,9 @@
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
         .nav-label { font-size: 0.6rem; font-weight: bold; }
 
-        /* Board Style (Added for Portfolio icons) */
+        /* Board Style */
         #chat-messages { padding: 10px; }
-        .msg-card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 12px; 
-            margin-bottom: 12px; 
-            border: 1px solid #f1f5f9; 
-            display: flex; 
-            gap: 12px; 
-            align-items: flex-start; 
-        }
+        .msg-card { background: white; border-radius: 16px; padding: 12px; margin-bottom: 12px; border: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: flex-start; }
         .mini-chart-wrapper { width: 50px; height: 50px; flex-shrink: 0; position: relative; }
         .msg-body { flex: 1; }
         .msg-info { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; line-height: 1.2; }
@@ -54,12 +45,18 @@
         .input-bar { position: fixed; bottom: 70px; width: 100%; max-width: 480px; background: white; padding: 12px 15px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; box-sizing: border-box; }
         #chat-input { flex: 1; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; outline: none; background: #f8fafc; }
 
-        /* Modal */
+        /* Modal & Dynamic Inputs */
         #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         .input-item { margin-bottom: 15px; }
         .input-item label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; }
         .input-item input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        
+        .stock-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .stock-row input[type="text"] { flex: 2; }
+        .stock-row input[type="number"] { flex: 1; }
+        .btn-remove { background: #ff7675; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; line-height: 1; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
@@ -83,8 +80,8 @@
                 <canvas id="myChart"></canvas>
             </div>
             <div class="stats-grid">
-                <div class="stat-box"><span class="stat-label">金融資産比率</span><div id="risk-ratio-val" class="stat-value">0%</div></div>
-                <div class="stat-box"><span class="stat-label">合計資産 (非公開可)</span><div id="total-amount-val" class="stat-value">¥0</div></div>
+                <div class="stat-box"><span class="stat-label">リスク資産比率</span><div id="risk-ratio-val" class="stat-value">0%</div></div>
+                <div class="stat-box"><span class="stat-label">合計資産</span><div id="total-amount-val" class="stat-value">¥0</div></div>
             </div>
         </div>
         <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
@@ -113,16 +110,24 @@
 <div id="settings-modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-top:0;">ポートフォリオ設定</h3>
-        <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname" placeholder="ニックネームを入力"></div>
+        <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
         <div class="input-item" style="background:#f1f5f9; padding:10px; border-radius:10px;">
             <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="set-show-amount"> 合計金額を公開する
             </label>
         </div>
-        <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac" placeholder="例: 200"></div>
-        <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp" placeholder="例: 150"></div>
-        <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash" placeholder="例: 100"></div>
-        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin:0;">保存</button>
+        <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
+        <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
+        <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
+        
+        <div class="input-item">
+            <label>個別株・その他</label>
+            <div id="stock-list-container">
+                </div>
+            <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 銘柄を追加する</button>
+        </div>
+
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin:20px 0 0 0;">保存</button>
     </div>
 </div>
 
@@ -147,7 +152,7 @@
     let currentUser = null;
     let myChart = null;
 
-    // Chart.js Center Text Plugin
+    // --- Chart Plugin ---
     const centerTextPlugin = {
         id: 'centerText',
         afterDraw(chart) {
@@ -156,18 +161,16 @@
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#64748b';
             ctx.fillText('推定利率', width / 2, height / 2 - 15);
-            ctx.font = '900 22px sans-serif';
-            ctx.fillStyle = '#1e293b';
+            ctx.font = '900 22px sans-serif'; ctx.fillStyle = '#1e293b';
             ctx.fillText(chart.config.options.elements.center.text, width / 2, height / 2 + 12);
             ctx.restore();
         }
     };
     Chart.register(centerTextPlugin);
 
-    // Switch Tabs
+    // --- Tab Switch ---
     window.switchTab = (tab) => {
         document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
@@ -176,7 +179,7 @@
         if (tab === 'main') loadUserData();
     };
 
-    // Auth State
+    // --- Auth ---
     onAuthStateChanged(auth, user => {
         if(user) {
             currentUser = user;
@@ -184,12 +187,8 @@
             document.getElementById('main-content').classList.remove('hidden');
             document.getElementById('global-nav').classList.remove('hidden');
             const avatar = document.getElementById('user-avatar');
-            avatar.classList.remove('hidden');
-            avatar.src = user.photoURL;
-            
-            onValue(ref(db, `users/${currentUser.uid}`), (snap) => {
-                updateMyUI(snap.val() || {});
-            });
+            avatar.classList.remove('hidden'); avatar.src = user.photoURL;
+            onValue(ref(db, `users/${currentUser.uid}`), (snap) => updateMyUI(snap.val() || {}));
             initChat();
         }
     });
@@ -200,16 +199,34 @@
         updateMyUI(snap.val() || {});
     }
 
-    // Update Main UI Chart
+    // --- Dynamic Stock UI ---
+    window.addStockRow = (name = "", val = "") => {
+        const container = document.getElementById('stock-list-container');
+        const row = document.createElement('div');
+        row.className = 'stock-row';
+        row.innerHTML = `
+            <input type="text" placeholder="銘柄名 (例: トヨタ)" value="${name}">
+            <input type="number" placeholder="万円" value="${val}">
+            <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+        `;
+        container.appendChild(row);
+    };
+
+    // --- UI Update (Main) ---
     function updateMyUI(data) {
         const ac = parseInt(data.ac) || 0;
         const sp = parseInt(data.sp) || 0;
         const cash = parseInt(data.cash) || 0;
-        const total = ac + sp + cash;
-        const rate = total ? (((ac * 0.05) + (sp * 0.08)) / total * 100).toFixed(1) : "0.0";
+        const stocks = data.stocks || [];
+        const stocksTotal = stocks.reduce((sum, s) => sum + (parseInt(s.val) || 0) * 10000, 0);
+        
+        const total = ac + sp + cash + stocksTotal;
+        const riskAsset = ac + sp + stocksTotal;
+        const riskRatio = total ? Math.round((riskAsset / total) * 100) : 0;
+        const rate = total ? (((ac * 0.05) + (sp * 0.08) + (stocksTotal * 0.04)) / total * 100).toFixed(1) : "0.0";
 
         document.getElementById('total-amount-val').innerText = `¥${total.toLocaleString()}`;
-        document.getElementById('risk-ratio-val').innerText = total ? Math.round(((ac + sp) / total) * 100) + "%" : "0%";
+        document.getElementById('risk-ratio-val').innerText = `${riskRatio}%`;
 
         const canvas = document.getElementById('myChart');
         if (!canvas) return;
@@ -218,8 +235,12 @@
         myChart = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['全世界', 'S&P500', '現金'],
-                datasets: [{ data: [ac, sp, cash], backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7'], borderWidth: 0 }]
+                labels: ['全世界', 'S&P500', '現金', '個別株'],
+                datasets: [{ 
+                    data: [ac, sp, cash, stocksTotal], 
+                    backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7', '#9b59b6'], 
+                    borderWidth: 0 
+                }]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '75%', 
@@ -229,14 +250,18 @@
         });
     }
 
-    // Helper: Create Board Mini Chart
-    function createMiniChart(canvasId, ac, sp, cash) {
+    // --- Board Logic ---
+    function createMiniChart(canvasId, ac, sp, cash, stocksTotal) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
             data: {
-                datasets: [{ data: [ac, sp, cash], backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7'], borderWidth: 0 }]
+                datasets: [{ 
+                    data: [ac, sp, cash, stocksTotal], 
+                    backgroundColor: ['#2ecc71', '#f39c12', '#bdc3c7', '#9b59b6'], 
+                    borderWidth: 0 
+                }]
             },
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '65%',
@@ -245,74 +270,62 @@
         });
     }
 
-    // Initialize Board
     function initChat() {
-    onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = "";
-        const drawTasks = [];
-
-        snap.forEach(child => {
-            const m = child.val();
-            const mid = child.key;
-            const canvasId = `chart-${mid}`;
-
-            const div = document.createElement('div');
-            div.className = 'msg-card';
-            div.innerHTML = `
-                <div class="mini-chart-wrapper">
-                    <canvas id="${canvasId}"></canvas>
-                </div>
-                <div class="msg-body">
-                    <div class="msg-info">
-                        <strong>${m.nickname}</strong> / 比率: ${Math.round((( (m.ac||0) + (m.sp||0) ) / ((m.ac||0) + (m.sp||0) + (m.cash||0) || 1)) * 100)}%
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            const drawTasks = [];
+            snap.forEach(child => {
+                const m = child.val();
+                const stocksTotal = (m.stocks || []).reduce((sum, s) => sum + (parseInt(s.val) || 0) * 10000, 0);
+                const total = (m.ac||0) + (m.sp||0) + (m.cash||0) + stocksTotal;
+                const ratio = total ? Math.round(((m.ac + m.sp + stocksTotal) / total) * 100) : 0;
+                
+                const div = document.createElement('div');
+                div.className = 'msg-card';
+                div.innerHTML = `
+                    <div class="mini-chart-wrapper"><canvas id="chart-${child.key}"></canvas></div>
+                    <div class="msg-body">
+                        <div class="msg-info"><strong>${m.nickname}</strong> / リスク比: ${ratio}%</div>
+                        <div class="msg-text">${m.text}</div>
                     </div>
-                    <div class="msg-text">${m.text}</div>
-                </div>
-            `;
-            container.prepend(div);
-            drawTasks.push({ id: canvasId, ac: m.ac||0, sp: m.sp||0, cash: m.cash||0 });
+                `;
+                container.prepend(div);
+                drawTasks.push({ id: `chart-${child.key}`, ac: m.ac||0, sp: m.sp||0, cash: m.cash||0, st: stocksTotal });
+            });
+            setTimeout(() => drawTasks.forEach(t => createMiniChart(t.id, t.ac, t.sp, t.cash, t.st)), 50);
         });
+    }
 
-        // DOMへの反映を確実にするため、少し待ってから描画
-        setTimeout(() => {
-            drawTasks.forEach(t => createMiniChart(t.id, t.ac, t.sp, t.cash));
-        }, 50); 
-    });
-}
-
-
-    // Chat Send
     document.getElementById('chat-send-btn').onclick = async () => {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim()) return;
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        const snap = await get(ref(db, `users/${currentUser.uid}`));
+        const u = snap.val() || {};
+        await push(ref(db, 'messages/room_0'), {
+            nickname: u.nickname || currentUser.displayName,
+            text: input.value,
+            ac: u.ac||0, sp: u.sp||0, cash: u.cash||0, stocks: u.stocks||[],
+            showAmount: u.showAmount||false, timestamp: serverTimestamp()
+        });
+        input.value = "";
+    };
 
-    // 自分の最新の資産データを取得
-    const snap = await get(ref(db, `users/${currentUser.uid}`));
-    const u = snap.val() || {};
-
-    await push(ref(db, 'messages/room_0'), {
-        nickname: u.nickname || currentUser.displayName,
-        text: input.value,
-        ac: u.ac || 0,
-        sp: u.sp || 0,
-        cash: u.cash || 0,
-        showAmount: u.showAmount || false,
-        timestamp: serverTimestamp()
-    });
-    input.value = "";
-    // pushするとonValueが自動で走りますが、描画が漏れる場合はここでinitChat()を呼ぶのも手です
-};
-
-
-    // Settings logic
+    // --- Settings Save/Load ---
     window.saveSettings = async () => {
+        const stockRows = document.querySelectorAll('.stock-row');
+        const stocks = Array.from(stockRows).map(row => ({
+            name: row.querySelectorAll('input')[0].value,
+            val: row.querySelectorAll('input')[1].value
+        })).filter(s => s.name && s.val);
+
         const updates = {
             nickname: document.getElementById('set-nickname').value || currentUser.displayName,
             showAmount: document.getElementById('set-show-amount').checked,
             ac: (parseInt(document.getElementById('set-ac').value) || 0) * 10000,
             sp: (parseInt(document.getElementById('set-sp').value) || 0) * 10000,
             cash: (parseInt(document.getElementById('set-cash').value) || 0) * 10000,
+            stocks: stocks
         };
         await update(ref(db, `users/${currentUser.uid}`), updates);
         hideSettings();
@@ -326,11 +339,14 @@
         document.getElementById('set-ac').value = d.ac ? d.ac / 10000 : "";
         document.getElementById('set-sp').value = d.sp ? d.sp / 10000 : "";
         document.getElementById('set-cash').value = d.cash ? d.cash / 10000 : "";
+        
+        const container = document.getElementById('stock-list-container');
+        container.innerHTML = "";
+        if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
+        
         document.getElementById('settings-modal').style.display = 'block';
     };
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-
-    // Login logic
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
