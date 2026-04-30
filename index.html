@@ -66,18 +66,19 @@
     });
 
     // 送信処理
+        // 送信処理
     document.getElementById('btn-send').addEventListener('click', async () => {
         const txt = document.getElementById('test-input').value;
         if (!txt.trim()) return;
 
         await push(ref(db, 'messages/room_0'), {
             uid: userObj.uid,
-            nickname: userObj.displayName,
+            nickname: userObj.displayName || "ニックネーム未設定",
             text: txt,
             timestamp: serverTimestamp()
         });
-        document.getElementById('test-input').value = "";
-    });
+        document.getElementById('test-input').value = ""; // 入力欄を空にする
+    }); // ← ここが抜けていました
 
     // 読み込み（リスナー）
     function startListening() {
@@ -90,7 +91,6 @@
                 data.push(child.val());
             });
 
-            // 新しい順に表示
             data.reverse().forEach(post => {
                 const div = document.createElement('div');
                 div.className = 'post-item';
@@ -103,6 +103,7 @@
             });
         });
     }
+
 
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
