@@ -266,72 +266,45 @@
     // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
     // --- renderPosts関数を以下に差し替えてください ---
 
-// --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
 function renderPosts(snap, targetEl) {
     targetEl.innerHTML = "";
     const msgs = [];
+    snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
     
-    // データを配列に変換
-    snap.forEach(c => {
-        const val = c.val();
-        msgs.push({ key: c.key, ...val });
-    });
-    
-    // 新しい順に並べる
     msgs.reverse().forEach(m => {
-        // データの安全性を確保（データが空でもエラーにしない）
-        const nickname = m.nickname || "名無しさん";
-        const text = m.text || "";
-        const firstChar = nickname.charAt(0);
+        const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
         const canvasId = `chart-post-${m.key}`;
         
-        // 日付の変換（timestampがない場合は現在時刻、または不明と表示）
-        let timeStr = "不明";
-        if (m.timestamp) {
-            try {
-                timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } catch(e) { console.error(e); }
-        }
-
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
                 <canvas id="${canvasId}" width="45" height="45"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                            background: white; width: 22px; height: 22px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;">
                     ${firstChar}
                 </div>
             </div>
             <div class="msg-right">
                 <div class="msg-header">
-                    <span class="msg-user">${nickname}</span>
-                    <span class="msg-date">${timeStr}</span>
+                    <span class="msg-user">${m.nickname}</span>
+                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                 </div>
-                <div class="msg-text">${text}</div>
+                <div class="msg-text">${m.text}</div>
             </div>
         `;
         targetEl.appendChild(div);
 
-        // グラフデータの復元（portfolioがない古いデータの場合は[1]を入れる）
-        let pData = m.portfolio;
-        if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            // 旧コードのデータ形式（ac, sp, cash）をチェックして変換を試みる
-            const oldAc = parseInt(m.ac) || 0;
-            const oldSp = parseInt(m.sp) || 0;
-            const oldCash = parseInt(m.cash) || 0;
-            pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
-        }
+        // メッセージに保存されているポートフォリオデータを使用
+        const pData = m.portfolio || [];
 
         const ctx = document.getElementById(canvasId).getContext('2d');
         new Chart(ctx, {
             type: 'doughnut',
             data: {
                 datasets: [{
-                    data: pData,
-                    backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
+                    data: pData.length ? pData : [1],
+                    backgroundColor: pData.length ? stockColors : ['#eee'],
                     borderWidth: 0
                 }]
             },
@@ -345,35 +318,76 @@ function renderPosts(snap, targetEl) {
     });
 }
 
-// --- 2. 送信ボタンの処理（確実にデータを送る形） ---
-document.getElementById('chat-send-btn').onclick = async () => {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim() || !currentUser) return;
 
-    // 現在のポートフォリオ値を数値配列にする
+    document.getElementById('chat-send-btn').onclick = async () => {
+    const input = document.getElementById('chat-input');
+    if(!input.value.trim()) return;
+
+    // currentPortfolioListが空でないか確認し、値（val）だけの配列を作る
     const portfolioSnapshot = currentPortfolioList.length > 0 
         ? currentPortfolioList.map(item => item.val) 
         : [];
 
-    try {
-        await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, 
-            nickname: currentData.nickname || currentUser.displayName || "名無し", 
-            text: input.value, 
-            timestamp: serverTimestamp(),
-            portfolio: portfolioSnapshot,
-            // 互換性のために古い形式も少し残しておく
-            ac: currentData.ac || 0,
-            sp: currentData.sp || 0,
-            cash: currentData.cash || 0
-        });
-        input.value = "";
-    } catch (e) {
-        console.error("送信エラー:", e);
-        alert("送信に失敗しました。ルールの公開を確認してください。");
-    }
+    await push(ref(db, 'messages/room_0'), {
+        uid: currentUser.uid, 
+        nickname: currentData.nickname || currentUser.displayName, 
+        text: input.value, 
+        timestamp: serverTimestamp(),
+        portfolio: portfolioSnapshot // ここに配列が入る
+    });
+    input.value = "";
 };
 
+    window.showDetails = () => {
+        const isHidden = currentData.hideAmount === true;
+        const total = currentPortfolioList.reduce((s, i) => s + i.val, 0);
+        document.getElementById('detail-list').innerHTML = currentPortfolioList.map(item => `
+            <li class="detail-item">
+                <div><span class="chip-dot" style="background:${item.color}"></span>${item.name}</div>
+                <div style="text-align:right;">
+                    <b>${isHidden ? "¥********" : "¥"+item.val.toLocaleString()}</b><br>
+                    <small>${total ? ((item.val/total)*100).toFixed(1) : 0}%</small>
+                </div>
+            </li>
+        `).join('');
+        document.getElementById('detail-modal').style.display = 'block';
+    };
+
+    window.showSettings = () => {
+        const d = currentData;
+        document.getElementById('set-hide-amount').checked = d.hideAmount || false;
+        document.getElementById('set-nickname').value = d.nickname || "";
+        document.getElementById('set-bio').value = d.bio || "";
+        document.getElementById('set-target-profit').value = d.targetProfit || "";
+        document.getElementById('set-ac').value = d.ac || "";
+        document.getElementById('set-sp').value = d.sp || "";
+        document.getElementById('stock-list-container').innerHTML = "";
+        if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
+        document.getElementById('settings-modal').style.display = 'block';
+    };
+
+    window.addStockRow = (name = "", val = "") => {
+        const row = document.createElement('div');
+        row.className = 'stock-row';
+        row.innerHTML = `<input type="text" placeholder="銘柄" value="${name}" style="flex:2"><input type="number" placeholder="万円" value="${val}" style="flex:1"><button onclick="this.parentElement.remove()" style="border:none; background:none; color:red;">✕</button>`;
+        document.getElementById('stock-list-container').appendChild(row);
+    };
+
+    window.saveSettings = async () => {
+        const stocks = Array.from(document.querySelectorAll('.stock-row')).map(row => ({
+            name: row.querySelectorAll('input')[0].value, val: row.querySelectorAll('input')[1].value
+        })).filter(s => s.name && s.val);
+        await update(ref(db, `users/${currentUser.uid}`), {
+            hideAmount: document.getElementById('set-hide-amount').checked,
+            nickname: document.getElementById('set-nickname').value || currentUser.displayName,
+            bio: document.getElementById('set-bio').value,
+            targetProfit: parseInt(document.getElementById('set-target-profit').value) || 0,
+            ac: parseInt(document.getElementById('set-ac').value) || 0,
+            sp: parseInt(document.getElementById('set-sp').value) || 0,
+            stocks: stocks
+        });
+        hideSettings();
+    };
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
