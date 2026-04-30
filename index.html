@@ -15,7 +15,7 @@
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* ダッシュボードUI */
+        /* ダッシュボードUI (共通) */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .chart-box { width: 160px; height: 160px; position: relative; }
@@ -30,7 +30,7 @@
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 10px 15px; cursor: pointer; font-size: 1rem; }
         .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; width: 100%; margin-top: 5px; }
 
-        /* マイページ内サブタブ */
+        /* サブタブ (マイページ内) */
         .sub-tab-container { display: flex; background: white; border-bottom: 1px solid #e2e8f0; margin-top: 10px; }
         .sub-tab { flex: 1; text-align: center; padding: 12px; font-size: 0.85rem; font-weight: bold; color: #94a3b8; cursor: pointer; }
         .sub-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
@@ -44,7 +44,7 @@
         .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.4; }
 
         /* 掲示板入力エリア */
-        .chat-input-area { background: white; padding: 15px; position: sticky; top: 50px; z-index: 80; border-bottom: 1px solid #e2e8f0; }
+        .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px; }
         .chat-input-bar { display: flex; gap: 8px; }
         .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
         .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; cursor: pointer; }
@@ -64,6 +64,8 @@
         .input-item input, .input-item textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 0.9rem; }
         .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: bold; background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; }
         .stock-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .chip-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -77,8 +79,9 @@
         <button id="btn-login" class="btn-primary" style="background:#333; width:100%; margin:0;">Googleでログイン</button>
     </div>
 
-    <div id="main-content" class="hidden">
-        <div class="card">
+    <div id="authenticated-content" class="hidden">
+        
+        <div id="profile-card" class="card">
             <div class="dashboard-container">
                 <div class="dashboard-left" onclick="showDetails()">
                     <div class="chart-box">
@@ -97,23 +100,26 @@
                 </div>
             </div>
         </div>
-        <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
 
-        <div class="sub-tab-container">
-            <div class="sub-tab active" id="sub-tab-mine" onclick="switchSubTab('mine')">自分の投稿</div>
-            <div class="sub-tab" id="sub-tab-likes" onclick="switchSubTab('likes')">いいねした投稿</div>
-        </div>
-        <div id="my-posts-list" class="post-container"></div>
-    </div>
-
-    <div id="chat-content" class="hidden">
-        <div class="chat-input-area">
-            <div class="chat-input-bar">
-                <input type="text" id="chat-input" placeholder="投資仲間にメッセージを投稿...">
-                <button id="chat-send-btn" class="chat-send-btn">送信</button>
+        <div id="main-view">
+            <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
+            <div class="sub-tab-container">
+                <div class="sub-tab active" id="sub-tab-mine" onclick="switchSubTab('mine')">自分の投稿</div>
+                <div class="sub-tab" id="sub-tab-likes" onclick="switchSubTab('likes')">いいねした投稿</div>
             </div>
+            <div id="my-posts-list" class="post-container"></div>
         </div>
-        <div id="all-posts-list" class="post-container"></div>
+
+        <div id="chat-view" class="hidden">
+            <div class="chat-input-area">
+                <div class="chat-input-bar">
+                    <input type="text" id="chat-input" placeholder="投資仲間にメッセージを投稿...">
+                    <button id="chat-send-btn" class="chat-send-btn">送信</button>
+                </div>
+            </div>
+            <div id="all-posts-list" class="post-container"></div>
+        </div>
+
     </div>
 
     <nav class="nav-bar hidden" id="global-nav">
@@ -139,22 +145,16 @@
 <div id="settings-modal" class="modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin:0 0 15px 0;">プロフィール設定</h3>
-        <label class="checkbox-item">
-            <input type="checkbox" id="set-hide-amount"> 
-            資産額を「********」で隠す
-        </label>
+        <label class="checkbox-item"><input type="checkbox" id="set-hide-amount"> 資産額を伏せ字にする</label>
         <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
         <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="2"></textarea></div>
         <div class="input-item"><label>利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
-        
-        <label style="font-size:0.75rem; font-weight:bold; display:block; margin-bottom:5px;">個別銘柄</label>
+        <label style="font-size:0.75rem; font-weight:bold;">個別銘柄</label>
         <div id="stock-list-container"></div>
         <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 個別銘柄を追加</button>
-
-        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin:20px 0 0 0;">保存して更新</button>
-        <button class="btn-secondary" onclick="hideSettings()" style="background:none; border:none; color:#94a3b8;">閉じる</button>
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存して更新</button>
     </div>
 </div>
 
@@ -186,7 +186,7 @@
         if(user) {
             currentUser = user;
             document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('authenticated-content').classList.remove('hidden');
             document.getElementById('global-nav').classList.remove('hidden');
             document.getElementById('chart-avatar').src = user.photoURL;
             onValue(ref(db, `users/${user.uid}`), snap => updateMyUI(snap.val() || {}));
@@ -198,7 +198,6 @@
     function updateMyUI(data) {
         currentData = data;
         const isHidden = data.hideAmount === true;
-        
         const ac = (parseInt(data.ac) || 0) * 10000;
         const sp = (parseInt(data.sp) || 0) * 10000;
         const stocks = data.stocks || [];
@@ -227,10 +226,10 @@
         });
     }
 
-    // ナビ・タブ切り替え
+    // タブ切り替えメイン
     window.switchTab = (tab) => {
-        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
-        document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
+        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
+        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`nav-${tab}`).classList.add('active');
     };
@@ -241,12 +240,12 @@
         loadMyPosts(sub);
     };
 
-    // 投稿読み込みロジック
+    // 投稿ロード
     async function loadMyPosts(mode) {
         const listEl = document.getElementById('my-posts-list');
         listEl.innerHTML = "読込中...";
         if(mode === 'likes') {
-            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">いいね機能は開発中です</p>';
+            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
             return;
         }
         const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
@@ -255,8 +254,7 @@
     }
 
     function loadAllPosts() {
-        const q = query(ref(db, 'messages/room_0'), limitToLast(50));
-        onValue(q, snap => renderPosts(snap, document.getElementById('all-posts-list')));
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
     function renderPosts(snap, targetEl) {
@@ -280,7 +278,22 @@
         input.value = "";
     };
 
-    // 設定・銘柄管理
+    // 設定・詳細
+    window.showDetails = () => {
+        const isHidden = currentData.hideAmount === true;
+        const total = currentPortfolioList.reduce((s, i) => s + i.val, 0);
+        document.getElementById('detail-list').innerHTML = currentPortfolioList.map(item => `
+            <li class="detail-item">
+                <div><span class="chip-dot" style="background:${item.color}"></span>${item.name}</div>
+                <div style="text-align:right;">
+                    <b>${isHidden ? "¥********" : "¥"+item.val.toLocaleString()}</b><br>
+                    <small>${total ? ((item.val/total)*100).toFixed(1) : 0}%</small>
+                </div>
+            </li>
+        `).join('');
+        document.getElementById('detail-modal').style.display = 'block';
+    };
+
     window.showSettings = () => {
         const d = currentData;
         document.getElementById('set-hide-amount').checked = d.hideAmount || false;
@@ -289,18 +302,16 @@
         document.getElementById('set-target-profit').value = d.targetProfit || "";
         document.getElementById('set-ac').value = d.ac || "";
         document.getElementById('set-sp').value = d.sp || "";
-        const container = document.getElementById('stock-list-container');
-        container.innerHTML = "";
+        document.getElementById('stock-list-container').innerHTML = "";
         if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
         document.getElementById('settings-modal').style.display = 'block';
     };
 
     window.addStockRow = (name = "", val = "") => {
-        const container = document.getElementById('stock-list-container');
         const row = document.createElement('div');
         row.className = 'stock-row';
         row.innerHTML = `<input type="text" placeholder="銘柄" value="${name}" style="flex:2"><input type="number" placeholder="万円" value="${val}" style="flex:1"><button onclick="this.parentElement.remove()" style="border:none; background:none; color:red;">✕</button>`;
-        container.appendChild(row);
+        document.getElementById('stock-list-container').appendChild(row);
     };
 
     window.saveSettings = async () => {
@@ -317,15 +328,6 @@
             stocks: stocks
         });
         hideSettings();
-    };
-
-    window.showDetails = () => {
-        const isHidden = currentData.hideAmount === true;
-        const total = currentPortfolioList.reduce((s, i) => s + i.val, 0);
-        document.getElementById('detail-list').innerHTML = currentPortfolioList.map(item => `
-            <li class="detail-item"><div class="detail-left"><span class="chip-dot" style="background:${item.color}"></span>${item.name}</div><div style="text-align:right;"><div style="font-weight:bold; font-size:0.85rem;">${isHidden ? "¥********" : "¥"+item.val.toLocaleString()}</div><div style="font-size:0.7rem; color:#64748b;">${total ? ((item.val/total)*100).toFixed(1) : 0}%</div></div></li>
-        `).join('');
-        document.getElementById('detail-modal').style.display = 'block';
     };
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
