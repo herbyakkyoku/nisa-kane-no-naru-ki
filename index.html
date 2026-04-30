@@ -230,10 +230,13 @@
         });
     }
 
+    // タブ切り替え（プロフィールカードの表示制御を追加）
     window.switchTab = (tab) => {
         document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
+        // 掲示板（chat）の時はプロフィールカードを隠す指示
         document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
+        
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`nav-${tab}`).classList.add('active');
     };
@@ -260,83 +263,80 @@
         onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
-    // 送信処理：資産情報をセットして保存
-    document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim() || !currentUser) return;
+    // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
+    // --- renderPosts関数を以下に差し替えてください ---
 
-        // 現在の資産の「値」だけの配列を作成
-        const portfolioSnapshot = currentPortfolioList.map(item => ({ val: item.val }));
-
-        try {
-            await push(ref(db, 'messages/room_0'), {
-                uid: currentUser.uid, 
-                nickname: currentData.nickname || currentUser.displayName, 
-                text: input.value, 
-                timestamp: serverTimestamp(),
-                portfolio: portfolioSnapshot,
-                displayProfit: (currentData.targetProfit || 0) * 10000 
-            });
-            input.value = "";
-        } catch (e) {
-            console.error("送信エラー:", e);
-        }
-    };
-
-    function renderPosts(snap, targetEl) {
-        targetEl.innerHTML = "";
-        const msgs = [];
-        snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
+function renderPosts(snap, targetEl) {
+    targetEl.innerHTML = "";
+    const msgs = [];
+    snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
+    
+    msgs.reverse().forEach(m => {
+        const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
+        const canvasId = `chart-post-${m.key}`;
         
-        msgs.reverse().forEach(m => {
-            const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
-            const canvasId = `chart-post-${m.key}`;
-            
-            const div = document.createElement('div');
-            div.className = 'msg-card';
-            div.innerHTML = `
-                <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
-                    <canvas id="${canvasId}" width="45" height="45"></canvas>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                                font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                                background: white; width: 25px; height: 25px; border-radius: 50%;
-                                display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-                        ${firstChar}
-                    </div>
+        const div = document.createElement('div');
+        div.className = 'msg-card';
+        div.innerHTML = `
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
+                <canvas id="${canvasId}" width="45" height="45"></canvas>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;">
+                    ${firstChar}
                 </div>
-                <div class="msg-right">
-                    <div class="msg-header">
-                        <span class="msg-user">${m.nickname}</span>
-                        <span class="msg-date">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
-                    </div>
-                    <div class="msg-text">${m.text}</div>
-                    ${m.displayProfit ? `<div style="font-size: 0.7rem; color: #2ecc71; font-weight: bold; margin-top: 4px;">利益: ¥${m.displayProfit.toLocaleString()}</div>` : ''}
+            </div>
+            <div class="msg-right">
+                <div class="msg-header">
+                    <span class="msg-user">${m.nickname}</span>
+                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                 </div>
-            `;
-            targetEl.appendChild(div);
+                <div class="msg-text">${m.text}</div>
+            </div>
+        `;
+        targetEl.appendChild(div);
 
-            const pData = m.portfolio || [];
-            const values = Array.isArray(pData) ? pData.map(p => p.val) : [];
+        // メッセージに保存されているポートフォリオデータを使用
+        const pData = m.portfolio || [];
 
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: values.length > 0 ? values : [1],
-                        backgroundColor: values.length > 0 ? stockColors : ['#eee'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    cutout: '70%',
-                    responsive: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    events: []
-                }
-            });
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: pData.length ? pData : [1],
+                    backgroundColor: pData.length ? stockColors : ['#eee'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                responsive: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                events: []
+            }
         });
-    }
+    });
+}
+
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+    const input = document.getElementById('chat-input');
+    if(!input.value.trim()) return;
+
+    // currentPortfolioListが空でないか確認し、値（val）だけの配列を作る
+    const portfolioSnapshot = currentPortfolioList.length > 0 
+        ? currentPortfolioList.map(item => item.val) 
+        : [];
+
+    await push(ref(db, 'messages/room_0'), {
+        uid: currentUser.uid, 
+        nickname: currentData.nickname || currentUser.displayName, 
+        text: input.value, 
+        timestamp: serverTimestamp(),
+        portfolio: portfolioSnapshot // ここに配列が入る
+    });
+    input.value = "";
+};
 
     window.showDetails = () => {
         const isHidden = currentData.hideAmount === true;
@@ -393,6 +393,5 @@
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
-
 </body>
 </html>
