@@ -264,29 +264,66 @@
     }
 
     // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
-    function renderPosts(snap, targetEl) {
-        targetEl.innerHTML = "";
-        const msgs = [];
-        snap.forEach(c => msgs.push(c.val()));
-        msgs.reverse().forEach(m => {
-            const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
-            const div = document.createElement('div');
-            div.className = 'msg-card';
-            div.innerHTML = `
-                <div class="msg-left">
-                    <div class="msg-avatar">${firstChar}</div>
+    // --- renderPosts関数を以下に差し替えてください ---
+
+async function renderPosts(snap, targetEl) {
+    targetEl.innerHTML = "";
+    const msgs = [];
+    snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
+    
+    // 投稿をループしてHTMLを作成
+    for (const m of msgs.reverse()) {
+        const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
+        const canvasId = `chart-post-${m.key}`; // 各投稿固有のID
+        
+        const div = document.createElement('div');
+        div.className = 'msg-card';
+        div.innerHTML = `
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
+                <canvas id="${canvasId}" style="width: 45px; height: 45px;"></canvas>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;">
+                    ${firstChar}
                 </div>
-                <div class="msg-right">
-                    <div class="msg-header">
-                        <span class="msg-user">${m.nickname}</span>
-                        <span class="msg-date">${new Date(m.timestamp).toLocaleString()}</span>
-                    </div>
-                    <div class="msg-text">${m.text}</div>
+            </div>
+            <div class="msg-right">
+                <div class="msg-header">
+                    <span class="msg-user">${m.nickname}</span>
+                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                 </div>
-            `;
-            targetEl.appendChild(div);
+                <div class="msg-text">${m.text}</div>
+            </div>
+        `;
+        targetEl.appendChild(div);
+
+        // --- ここからその投稿ユーザーの資産データを取得してグラフを描画 ---
+        // メッセージデータ自体に資産比率が含まれていない場合は、再度DBから取得
+        const userSnap = await get(ref(db, `users/${m.uid}`));
+        const userData = userSnap.val() || {};
+        
+        const uAc = parseInt(userData.ac) || 0;
+        const uSp = parseInt(userData.sp) || 0;
+        const uStocks = userData.stocks || [];
+        const uDataList = [uAc, uSp, ...uStocks.map(s => parseInt(s.val) || 0)].filter(v => v > 0);
+
+        new Chart(document.getElementById(canvasId).getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: uDataList.length ? uDataList : [1],
+                    backgroundColor: uDataList.length ? stockColors : ['#eee'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                events: [] // インタラクション無効で軽量化
+            }
         });
     }
+}
+
 
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
