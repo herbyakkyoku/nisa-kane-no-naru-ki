@@ -111,6 +111,9 @@
                 <input type="checkbox" id="set-show-amount"> 合計金額を公開する
             </label>
         </div>
+        
+        <div class="input-item"><label>想定利益額 (万円)</label><input type="number" id="set-target-profit" placeholder="例: 50"></div>
+        
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
         <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
@@ -146,9 +149,9 @@
     let currentUser = null;
     let myChart = null;
 
-    // 個別株用のカラーパレット
     const stockColors = ['#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
 
+    // 変更: 中央のテキスト描画ロジックを利益額対応に
     const centerTextPlugin = {
         id: 'centerText',
         afterDraw(chart) {
@@ -156,7 +159,7 @@
             const { ctx, chartArea: { width, height } } = chart;
             ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#64748b';
-            ctx.fillText('推定利率', width / 2, height / 2 - 15);
+            ctx.fillText('想定利益', width / 2, height / 2 - 15);
             ctx.font = '900 22px sans-serif'; ctx.fillStyle = '#1e293b';
             ctx.fillText(chart.config.options.elements.center.text, width / 2, height / 2 + 12);
             ctx.restore();
@@ -204,18 +207,20 @@
         const sp = parseInt(data.sp) || 0;
         const cash = parseInt(data.cash) || 0;
         const stocks = data.stocks || [];
+        const targetProfit = data.targetProfit || 0; // 追加
         
         const stocksValues = stocks.map(s => (parseInt(s.val) || 0) * 10000);
         const stocksTotal = stocksValues.reduce((a, b) => a + b, 0);
         const total = ac + sp + cash + stocksTotal;
         
         const riskRatio = total ? Math.round(((ac + sp + stocksTotal) / total) * 100) : 0;
-        const rate = total ? (((ac * 0.05) + (sp * 0.08) + (stocksTotal * 0.04)) / total * 100).toFixed(1) : "0.0";
+        
+        // 利益額の表示形式
+        const displayProfit = `¥${(targetProfit * 10000).toLocaleString()}`;
 
         document.getElementById('total-amount-val').innerText = `¥${total.toLocaleString()}`;
         document.getElementById('risk-ratio-val').innerText = `${riskRatio}%`;
 
-        // 並び順: 全世界(ac) -> S&P500(sp) -> 個別株(stocks) -> 現金(cash)
         const labels = ['全世界', 'S&P500', ...stocks.map(s => s.name), '現金'];
         const chartData = [ac, sp, ...stocksValues, cash];
         const colors = ['#2ecc71', '#f39c12', ...stocks.map((_, i) => stockColors[i % stockColors.length]), '#bdc3c7'];
@@ -229,11 +234,12 @@
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '75%', 
                 plugins: { legend: { display: false } },
-                elements: { center: { text: rate + "%" } } 
+                elements: { center: { text: displayProfit } } // 利率から変更
             }
         });
     }
 
+    // ミニチャート用 (掲示板)
     function createMiniChart(canvasId, data) {
         const ac = data.ac || 0; const sp = data.sp || 0; const cash = data.cash || 0;
         const stocks = data.stocks || [];
@@ -289,9 +295,11 @@
         const stocks = Array.from(document.querySelectorAll('.stock-row')).map(row => ({
             name: row.querySelectorAll('input')[0].value, val: row.querySelectorAll('input')[1].value
         })).filter(s => s.name && s.val);
+        
         await update(ref(db, `users/${currentUser.uid}`), {
             nickname: document.getElementById('set-nickname').value || currentUser.displayName,
             showAmount: document.getElementById('set-show-amount').checked,
+            targetProfit: parseInt(document.getElementById('set-target-profit').value) || 0, // 保存
             ac: (parseInt(document.getElementById('set-ac').value) || 0) * 10000,
             sp: (parseInt(document.getElementById('set-sp').value) || 0) * 10000,
             cash: (parseInt(document.getElementById('set-cash').value) || 0) * 10000,
@@ -305,6 +313,7 @@
         const d = snap.val() || {};
         document.getElementById('set-nickname').value = d.nickname || "";
         document.getElementById('set-show-amount').checked = d.showAmount || false;
+        document.getElementById('set-target-profit').value = d.targetProfit || ""; // 表示
         document.getElementById('set-ac').value = d.ac ? d.ac / 10000 : "";
         document.getElementById('set-sp').value = d.sp ? d.sp / 10000 : "";
         document.getElementById('set-cash').value = d.cash ? d.cash / 10000 : "";
