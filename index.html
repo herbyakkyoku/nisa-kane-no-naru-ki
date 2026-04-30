@@ -10,13 +10,11 @@
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
         .app-container { width: 100%; max-width: 480px; position: relative; }
         
-        /* ヘッダー */
         .header { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: center; align-items: center; position: sticky; top: 0; z-index: 100; }
         .logo { font-size: 1.1rem; font-weight: 900; color: var(--primary); }
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* ダッシュボード */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .dashboard-right { flex: 1; }
@@ -38,18 +36,15 @@
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 0 15px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; }
 
-        /* ナビゲーション */
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
         .nav-label { font-size: 0.6rem; font-weight: bold; }
 
-        /* モーダル */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         
-        /* 詳細リスト */
         .detail-list { list-style: none; padding: 0; margin-top: 20px; }
         .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         .detail-left { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: bold; }
@@ -58,7 +53,6 @@
         .detail-amount { font-size: 0.85rem; color: #1e293b; font-weight: bold; }
         .detail-percent { font-size: 0.7rem; color: #64748b; }
 
-        /* 掲示板 */
         .chat-container { padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 100px; }
         .msg-card { background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .msg-user { font-size: 0.75rem; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
@@ -67,7 +61,6 @@
         .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
         .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; }
 
-        /* 設定 */
         .input-item { margin-bottom: 15px; }
         .input-item label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; }
         .input-item input, .input-item textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
@@ -86,7 +79,7 @@
 
     <div id="login-section" class="card" style="margin-top: 50px; text-align: center;">
         <h2 style="margin-top:0;">ポートフォリオを公開しよう</h2>
-        <p style="font-size:0.8rem; color:#64748b; margin-bottom:25px;">Google連携で簡単に始められます</p>
+        <p style="font-size:0.8rem; color:#64748b; margin-bottom:25px;">投資銘柄の内訳をシェアするSNS</p>
         <button id="btn-login" class="btn-primary" style="background:#333; width:100%; margin:0;">Googleでログイン</button>
     </div>
 
@@ -103,9 +96,9 @@
                     <div id="display-bio" class="bio-text">自己紹介を書いてみましょう</div>
                     <div class="stats-grid">
                         <div class="stat-box"><span class="stat-label">①利益額</span><div id="val-profit" class="stat-value">¥0</div></div>
-                        <div class="stat-box"><span class="stat-label">②リスク比</span><div id="val-risk" class="stat-value">0%</div></div>
+                        <div class="stat-box"><span class="stat-label">②銘柄数</span><div id="val-count" class="stat-value">0</div></div>
                         <div class="stat-box"><span class="stat-label">③いいね数</span><div id="val-likes" class="stat-value">0</div></div>
-                        <div class="stat-box"><span class="stat-label">④合計資産</span><div id="val-total" class="stat-value">¥0</div></div>
+                        <div class="stat-box"><span class="stat-label">④合計投資額</span><div id="val-total" class="stat-value">¥0</div></div>
                     </div>
                 </div>
             </div>
@@ -144,12 +137,12 @@
 <div id="settings-modal" class="modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin:0;">ポートフォリオ設定</h3>
+        <p style="font-size:0.7rem; color:#64748b; margin-bottom:15px;">※投資額のみを入力（現金は含めない）</p>
         <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
-        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="3" maxlength="100" placeholder="投資スタンスなど"></textarea></div>
+        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="3" maxlength="100"></textarea></div>
         <div class="input-item"><label>想定利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
-        <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
         <div id="stock-list-container"></div>
         <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 個別銘柄を追加する</button>
         <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存して更新</button>
@@ -194,7 +187,6 @@
     function updateMyUI(data) {
         const ac = (parseInt(data.ac) || 0);
         const sp = (parseInt(data.sp) || 0);
-        const cash = (parseInt(data.cash) || 0);
         const stocks = data.stocks || [];
         
         let list = [];
@@ -203,20 +195,17 @@
         stocks.forEach((s, i) => list.push({ name: s.name, val: (parseInt(s.val) || 0) * 10000, color: stockColors[(i + 2) % stockColors.length] }));
         
         list.sort((a, b) => b.val - a.val);
-        if (cash > 0) list.push({ name: '現金', val: cash, color: '#bdc3c7' });
 
         currentPortfolioData = list;
         const total = list.reduce((s, i) => s + i.val, 0);
 
-        // 指標更新
-        const riskTotal = list.filter(i => i.name !== '現金').reduce((s, i) => s + i.val, 0);
+        // 指標更新（リスク比は銘柄数に変更）
         document.getElementById('display-bio').innerText = data.bio || "自己紹介を書いてみましょう";
         document.getElementById('val-profit').innerText = `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
-        document.getElementById('val-risk').innerText = `${total ? Math.round((riskTotal / total) * 100) : 0}%`;
+        document.getElementById('val-count').innerText = `${list.length} 銘柄`;
         document.getElementById('val-likes').innerText = data.likes || 0;
         document.getElementById('val-total').innerText = `¥${total.toLocaleString()}`;
 
-        // グラフ描画
         const canvas = document.getElementById('myChart');
         if (myChart) myChart.destroy();
         myChart = new Chart(canvas.getContext('2d'), {
@@ -234,26 +223,25 @@
         });
     }
 
-    // タップ詳細表示
     window.showDetails = () => {
         const total = currentPortfolioData.reduce((s, i) => s + i.val, 0);
-        document.getElementById('detail-list').innerHTML = currentPortfolioData.map(item => `
-            <li class="detail-item">
-                <div class="detail-left">
-                    <span class="chip-dot" style="background:${item.color}"></span>
-                    ${item.name}
-                </div>
-                <div class="detail-right">
-                    <div class="detail-amount">¥${item.val.toLocaleString()}</div>
-                    <div class="detail-percent">${total ? ((item.val/total)*100).toFixed(1) : 0}%</div>
-                </div>
-            </li>
-        `).join('');
+        document.getElementById('detail-list').innerHTML = currentPortfolioData.length > 0 ? 
+            currentPortfolioData.map(item => `
+                <li class="detail-item">
+                    <div class="detail-left">
+                        <span class="chip-dot" style="background:${item.color}"></span>
+                        ${item.name}
+                    </div>
+                    <div class="detail-right">
+                        <div class="detail-amount">¥${item.val.toLocaleString()}</div>
+                        <div class="detail-percent">${total ? ((item.val/total)*100).toFixed(1) : 0}%</div>
+                    </div>
+                </li>
+            `).join('') : '<p style="text-align:center; color:#64748b;">まだデータがありません</p>';
         document.getElementById('detail-modal').style.display = 'block';
     };
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
 
-    // タブ切り替え
     window.switchTab = (tab) => {
         document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
@@ -261,7 +249,6 @@
         document.getElementById(`nav-${tab}`).classList.add('active');
     };
 
-    // 掲示板ロジック
     function initChat() {
         onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
             const container = document.getElementById('chat-messages');
@@ -287,7 +274,6 @@
         input.value = "";
     };
 
-    // 設定管理
     window.addStockRow = (name = "", val = "") => {
         const container = document.getElementById('stock-list-container');
         const row = document.createElement('div');
@@ -306,7 +292,6 @@
             targetProfit: parseInt(document.getElementById('set-target-profit').value) || 0,
             ac: (parseInt(document.getElementById('set-ac').value) || 0) * 10000,
             sp: (parseInt(document.getElementById('set-sp').value) || 0) * 10000,
-            cash: (parseInt(document.getElementById('set-cash').value) || 0) * 10000,
             stocks: stocks
         });
         hideSettings();
@@ -320,7 +305,6 @@
         document.getElementById('set-target-profit').value = d.targetProfit || "";
         document.getElementById('set-ac').value = d.ac ? d.ac / 10000 : "";
         document.getElementById('set-sp').value = d.sp ? d.sp / 10000 : "";
-        document.getElementById('set-cash').value = d.cash ? d.cash / 10000 : "";
         const container = document.getElementById('stock-list-container');
         container.innerHTML = "";
         if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
