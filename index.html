@@ -338,16 +338,23 @@ async function renderPosts(snap, targetEl) {
 }
 
     document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim()) return;
-        await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, 
-            nickname: currentData.nickname || currentUser.displayName, 
-            text: input.value, 
-            timestamp: serverTimestamp()
-        });
-        input.value = "";
-    };
+    const input = document.getElementById('chat-input');
+    if(!input.value.trim()) return;
+
+    // 現在のポートフォリオの値を配列として抽出
+    const portfolioSnapshot = currentPortfolioList.map(item => item.val);
+
+    await push(ref(db, 'messages/room_0'), {
+        uid: currentUser.uid, 
+        nickname: currentData.nickname || currentUser.displayName, 
+        text: input.value, 
+        timestamp: serverTimestamp(),
+        // 資産データをメッセージに埋め込む
+        portfolio: portfolioSnapshot 
+    });
+    input.value = "";
+};
+
 
     window.showDetails = () => {
         const isHidden = currentData.hideAmount === true;
