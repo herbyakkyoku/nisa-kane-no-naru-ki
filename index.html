@@ -15,7 +15,6 @@
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* ダッシュボードレイアウト */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .dashboard-right { flex: 1; }
@@ -27,15 +26,19 @@
             border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); pointer-events: none;
         }
 
-        /* 凡例（カラーチップ）のスタイル */
+        /* 凡例（カラーチップ）を2列のグリッドに変更 */
         .legends-container {
-            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; justify-content: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列 */
+            gap: 6px;
+            margin-top: 12px;
         }
         .legend-chip {
-            display: flex; align-items: center; gap: 4px; background: #f1f5f9;
+            display: flex; align-items: center; gap: 6px; background: #f1f5f9;
             padding: 4px 8px; border-radius: 20px; font-size: 0.65rem; color: #475569;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         
         .bio-text { font-size: 0.8rem; line-height: 1.4; color: #475569; margin-bottom: 12px; min-height: 3em; }
 
@@ -54,11 +57,10 @@
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
         .nav-label { font-size: 0.6rem; font-weight: bold; }
 
-        /* モーダル共通 */
+        /* モーダル */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         
-        /* 詳細リストのスタイル */
         .detail-list { list-style: none; padding: 0; margin-top: 20px; }
         .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         .detail-left { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: bold; }
@@ -110,20 +112,12 @@
         <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
     </div>
 
-    <div id="chat-content" class="hidden">
-        <div id="chat-messages" style="padding: 10px;"></div>
-        <div class="input-bar">
-            <input type="text" id="chat-input" placeholder="今の相場はどう？">
-            <button id="chat-send-btn" style="background:var(--accent); color:white; border:none; padding:0 20px; border-radius:10px; font-weight:bold;">送信</button>
-        </div>
-    </div>
-
     <nav class="nav-bar hidden" id="global-nav">
-        <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
+        <div class="nav-item active" onclick="switchTab('main')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 4 4 7-7"/></svg>
             <span class="nav-label">マイ資産</span>
         </div>
-        <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
+        <div class="nav-item" onclick="switchTab('chat')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="nav-label">掲示板</span>
         </div>
@@ -142,7 +136,7 @@
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin:0;">ポートフォリオ設定</h3>
         <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
-        <div class="input-item"><label>自己紹介 (100文字程度)</label><textarea id="set-bio" rows="3" maxlength="100"></textarea></div>
+        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="3" maxlength="100"></textarea></div>
         <div class="input-item"><label>想定利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
@@ -156,7 +150,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -173,7 +167,7 @@
 
     let currentUser = null;
     let myChart = null;
-    let currentPortfolioData = []; // 詳細表示用に保持
+    let currentPortfolioData = [];
     const stockColors = ['#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
 
     onAuthStateChanged(auth, user => {
@@ -184,7 +178,6 @@
             document.getElementById('global-nav').classList.remove('hidden');
             document.getElementById('chart-avatar').src = user.photoURL;
             onValue(ref(db, `users/${currentUser.uid}`), snap => updateMyUI(snap.val() || {}));
-            initChat();
         }
     });
 
@@ -193,11 +186,7 @@
         const sp = (parseInt(data.sp) || 0);
         const cash = (parseInt(data.cash) || 0);
         const stocks = data.stocks || [];
-        const stocksValues = stocks.map(s => (parseInt(s.val) || 0) * 10000);
-        const stocksTotal = stocksValues.reduce((a, b) => a + b, 0);
-        const total = ac + sp + cash + stocksTotal;
-
-        // データを構造化してソート (表示用)
+        
         let list = [
             { name: '全世界', val: ac, color: '#2ecc71' },
             { name: 'S&P500', val: sp, color: '#f39c12' }
@@ -206,9 +195,10 @@
         list = list.filter(item => item.val > 0).sort((a, b) => b.val - a.val);
         if (cash > 0) list.push({ name: '現金', val: cash, color: '#bdc3c7' });
 
-        currentPortfolioData = list; // グローバルに保存
+        currentPortfolioData = list;
+        const total = list.reduce((s, i) => s + i.val, 0);
 
-        // ① 凡例チップの生成
+        // 凡例チップの表示
         const legendBox = document.getElementById('chart-legends');
         legendBox.innerHTML = list.map(item => `
             <div class="legend-chip">
@@ -217,7 +207,7 @@
             </div>
         `).join('');
 
-        // 4つの指標の更新
+        // 指標
         const riskTotal = list.filter(i => i.name !== '現金').reduce((s, i) => s + i.val, 0);
         document.getElementById('display-bio').innerText = data.bio || "自己紹介を書いてみましょう";
         document.getElementById('val-profit').innerText = `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
@@ -225,7 +215,6 @@
         document.getElementById('val-likes').innerText = data.likes || 0;
         document.getElementById('val-total').innerText = `¥${total.toLocaleString()}`;
 
-        // グラフ描画
         const canvas = document.getElementById('myChart');
         if (myChart) myChart.destroy();
         myChart = new Chart(canvas.getContext('2d'), {
@@ -238,11 +227,9 @@
         });
     }
 
-    // 詳細モーダルの表示
     window.showDetails = () => {
         const total = currentPortfolioData.reduce((s, i) => s + i.val, 0);
-        const listEl = document.getElementById('detail-list');
-        listEl.innerHTML = currentPortfolioData.map(item => `
+        document.getElementById('detail-list').innerHTML = currentPortfolioData.map(item => `
             <li class="detail-item">
                 <div class="detail-left">
                     <span class="chip-dot" style="background:${item.color}; width:12px; height:12px;"></span>
@@ -258,14 +245,6 @@
     };
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
-
-    // --- その他既存機能 ---
-    window.switchTab = (tab) => {
-        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
-        document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`nav-${tab}`).classList.add('active');
-    };
 
     window.addStockRow = (name = "", val = "") => {
         const container = document.getElementById('stock-list-container');
@@ -307,32 +286,10 @@
     };
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
 
-    function initChat() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = "";
-            snap.forEach(child => {
-                const m = child.val();
-                const div = document.createElement('div');
-                div.className = 'msg-card';
-                div.style.background = "#fff"; div.style.borderRadius = "12px"; div.style.padding = "10px"; div.style.marginBottom = "8px";
-                div.innerHTML = `<strong>${m.nickname}</strong>: ${m.text}`;
-                container.prepend(div);
-            });
-        });
-    }
-
-    document.getElementById('chat-send-btn').onclick = async () => {
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim()) return;
-        const snap = await get(ref(db, `users/${currentUser.uid}`));
-        const u = snap.val() || {};
-        await push(ref(db, 'messages/room_0'), {
-            nickname: u.nickname || currentUser.displayName, text: input.value, timestamp: serverTimestamp()
-        });
-        input.value = "";
+    window.switchTab = (tab) => {
+        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
+        // チャット等の他タブは必要に応じて実装
     };
-
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
