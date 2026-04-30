@@ -15,7 +15,7 @@
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* ダッシュボードUI (共通) */
+        /* ダッシュボードUI */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .chart-box { width: 160px; height: 160px; position: relative; }
@@ -35,16 +35,22 @@
         .sub-tab { flex: 1; text-align: center; padding: 12px; font-size: 0.85rem; font-weight: bold; color: #94a3b8; cursor: pointer; }
         .sub-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-        /* 投稿リスト */
-        .post-container { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg-card { background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-        .msg-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .msg-user { font-size: 0.75rem; font-weight: bold; color: var(--primary); }
-        .msg-date { font-size: 0.6rem; color: #cbd5e1; }
-        .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.4; }
+        /* --- 掲示板レイアウト (アイコン左・コメント右) --- */
+        .post-container { padding: 10px 15px; display: flex; flex-direction: column; gap: 12px; }
+        .msg-card { display: flex; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; align-items: flex-start; }
+        
+        .msg-left { flex-shrink: 0; margin-right: 12px; }
+        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: #96837a; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; overflow: hidden; }
+        .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .msg-right { flex: 1; display: flex; flex-direction: column; }
+        .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .msg-user { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
+        .msg-date { font-size: 0.65rem; color: #cbd5e1; }
+        .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.5; word-break: break-all; }
 
         /* 掲示板入力エリア */
-        .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 10px; }
+        .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 80; }
         .chat-input-bar { display: flex; gap: 8px; }
         .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
         .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; cursor: pointer; }
@@ -56,7 +62,6 @@
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
         .nav-label { font-size: 0.6rem; font-weight: bold; }
 
-        /* モーダル */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         .input-item { margin-bottom: 12px; }
@@ -151,7 +156,6 @@
         <div class="input-item"><label>利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
-        <label style="font-size:0.75rem; font-weight:bold;">個別銘柄</label>
         <div id="stock-list-container"></div>
         <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 個別銘柄を追加</button>
         <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存して更新</button>
@@ -226,10 +230,13 @@
         });
     }
 
-    // タブ切り替えメイン
+    // タブ切り替え（プロフィールカードの表示制御を追加）
     window.switchTab = (tab) => {
         document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
+        // 掲示板（chat）の時はプロフィールカードを隠す指示
+        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
+        
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`nav-${tab}`).classList.add('active');
     };
@@ -240,7 +247,6 @@
         loadMyPosts(sub);
     };
 
-    // 投稿ロード
     async function loadMyPosts(mode) {
         const listEl = document.getElementById('my-posts-list');
         listEl.innerHTML = "読込中...";
@@ -257,14 +263,27 @@
         onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
+    // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
     function renderPosts(snap, targetEl) {
         targetEl.innerHTML = "";
         const msgs = [];
         snap.forEach(c => msgs.push(c.val()));
         msgs.reverse().forEach(m => {
+            const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
             const div = document.createElement('div');
             div.className = 'msg-card';
-            div.innerHTML = `<div class="msg-header"><span class="msg-user">${m.nickname}</span><span class="msg-date">${new Date(m.timestamp).toLocaleString()}</span></div><div class="msg-text">${m.text}</div>`;
+            div.innerHTML = `
+                <div class="msg-left">
+                    <div class="msg-avatar">${firstChar}</div>
+                </div>
+                <div class="msg-right">
+                    <div class="msg-header">
+                        <span class="msg-user">${m.nickname}</span>
+                        <span class="msg-date">${new Date(m.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div class="msg-text">${m.text}</div>
+                </div>
+            `;
             targetEl.appendChild(div);
         });
     }
@@ -273,12 +292,14 @@
         const input = document.getElementById('chat-input');
         if(!input.value.trim()) return;
         await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, nickname: currentData.nickname || currentUser.displayName, text: input.value, timestamp: serverTimestamp()
+            uid: currentUser.uid, 
+            nickname: currentData.nickname || currentUser.displayName, 
+            text: input.value, 
+            timestamp: serverTimestamp()
         });
         input.value = "";
     };
 
-    // 設定・詳細
     window.showDetails = () => {
         const isHidden = currentData.hideAmount === true;
         const total = currentPortfolioList.reduce((s, i) => s + i.val, 0);
