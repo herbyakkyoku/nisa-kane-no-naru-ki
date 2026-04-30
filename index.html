@@ -247,17 +247,21 @@
         loadMyPosts(sub);
     };
 
-    async function loadMyPosts(mode) {
-        const listEl = document.getElementById('my-posts-list');
-        listEl.innerHTML = "読込中...";
-        if(mode === 'likes') {
-            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
-            return;
-        }
-        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
-        const snap = await get(q);
-        renderPosts(snap, listEl);
+    // loadMyPosts を以下に書き換え
+function loadMyPosts(mode) {
+    const listEl = document.getElementById('my-posts-list');
+    listEl.innerHTML = "読込中...";
+    if(mode === 'likes') {
+        listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
+        return;
     }
+    
+    // onValueを使って自分の投稿もリアルタイムで見張る
+    const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
+    onValue(q, snap => {
+        renderPosts(snap, listEl);
+    });
+}
 
     function loadAllPosts() {
         onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
@@ -275,29 +279,34 @@ function renderPosts(snap, targetEl) {
         const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
         const canvasId = `chart-post-${m.key}`;
         
+        // タイムスタンプが確定していない場合は空文字にする対策
+        const timeStr = (m.timestamp && typeof m.timestamp === 'number') 
+            ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+            : "...";
+
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
             <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
                 <canvas id="${canvasId}" width="45" height="45"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;">
+                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
+                            background: white; width: 25px; height: 25px; border-radius: 50%;
+                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                     ${firstChar}
                 </div>
             </div>
             <div class="msg-right">
                 <div class="msg-header">
                     <span class="msg-user">${m.nickname}</span>
-                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <span class="msg-date">${timeStr}</span>
                 </div>
                 <div class="msg-text">${m.text}</div>
             </div>
         `;
         targetEl.appendChild(div);
 
-        // メッセージに保存されているポートフォリオデータを使用
         const pData = m.portfolio || [];
-
         const ctx = document.getElementById(canvasId).getContext('2d');
         new Chart(ctx, {
             type: 'doughnut',
