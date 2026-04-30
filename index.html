@@ -269,35 +269,36 @@
 async function renderPosts(snap, targetEl) {
     targetEl.innerHTML = "";
     const msgs = [];
-    snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
-    
-    // 投稿をループしてHTMLを作成
+    snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
+
     for (const m of msgs.reverse()) {
         const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
-        const canvasId = `chart-post-${m.key}`; // 各投稿固有のID
-        
+        const canvasId = `chart-post-${m.key}`;
+
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
             <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
-                <canvas id="${canvasId}" style="width: 45px; height: 45px;"></canvas>
+                <canvas id="${canvasId}" width="45" height="45"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;">
+                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
+                            background: rgba(255,255,255,0.8); width: 25px; height: 25px; 
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     ${firstChar}
                 </div>
             </div>
             <div class="msg-right">
                 <div class="msg-header">
                     <span class="msg-user">${m.nickname}</span>
-                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div class="msg-text">${m.text}</div>
             </div>
         `;
         targetEl.appendChild(div);
 
-        // --- ここからその投稿ユーザーの資産データを取得してグラフを描画 ---
-        // メッセージデータ自体に資産比率が含まれていない場合は、再度DBから取得
+        // データの再取得と描画
         const userSnap = await get(ref(db, `users/${m.uid}`));
         const userData = userSnap.val() || {};
         
@@ -306,7 +307,8 @@ async function renderPosts(snap, targetEl) {
         const uStocks = userData.stocks || [];
         const uDataList = [uAc, uSp, ...uStocks.map(s => parseInt(s.val) || 0)].filter(v => v > 0);
 
-        new Chart(document.getElementById(canvasId).getContext('2d'), {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
             type: 'doughnut',
             data: {
                 datasets: [{
@@ -317,12 +319,14 @@ async function renderPosts(snap, targetEl) {
             },
             options: {
                 cutout: '70%',
+                responsive: false, // サイズ固定のため
                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: [] // インタラクション無効で軽量化
+                events: []
             }
         });
     }
 }
+
 
 
     document.getElementById('chat-send-btn').onclick = async () => {
