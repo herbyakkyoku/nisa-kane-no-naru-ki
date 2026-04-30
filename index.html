@@ -15,7 +15,6 @@
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* ダッシュボードUI */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .chart-box { width: 160px; height: 160px; position: relative; }
@@ -30,32 +29,25 @@
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 10px 15px; cursor: pointer; font-size: 1rem; }
         .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; width: 100%; margin-top: 5px; }
 
-        /* サブタブ (マイページ内) */
         .sub-tab-container { display: flex; background: white; border-bottom: 1px solid #e2e8f0; margin-top: 10px; }
         .sub-tab { flex: 1; text-align: center; padding: 12px; font-size: 0.85rem; font-weight: bold; color: #94a3b8; cursor: pointer; }
         .sub-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-        /* --- 掲示板レイアウト (アイコン左・コメント右) --- */
         .post-container { padding: 10px 15px; display: flex; flex-direction: column; gap: 12px; }
         .msg-card { display: flex; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; align-items: flex-start; }
         
         .msg-left { flex-shrink: 0; margin-right: 12px; }
-        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: #96837a; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; overflow: hidden; }
-        .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        
         .msg-right { flex: 1; display: flex; flex-direction: column; }
         .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .msg-user { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
         .msg-date { font-size: 0.65rem; color: #cbd5e1; }
         .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.5; word-break: break-all; }
 
-        /* 掲示板入力エリア */
         .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 80; }
         .chat-input-bar { display: flex; gap: 8px; }
         .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
         .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; cursor: pointer; }
 
-        /* ナビゲーション */
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
@@ -85,7 +77,6 @@
     </div>
 
     <div id="authenticated-content" class="hidden">
-        
         <div id="profile-card" class="card">
             <div class="dashboard-container">
                 <div class="dashboard-left" onclick="showDetails()">
@@ -124,7 +115,6 @@
             </div>
             <div id="all-posts-list" class="post-container"></div>
         </div>
-
     </div>
 
     <nav class="nav-bar hidden" id="global-nav">
@@ -230,13 +220,10 @@
         });
     }
 
-    // タブ切り替え（プロフィールカードの表示制御を追加）
     window.switchTab = (tab) => {
         document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
-        // 掲示板（chat）の時はプロフィールカードを隠す指示
         document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
-        
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`nav-${tab}`).classList.add('active');
     };
@@ -263,117 +250,113 @@
         onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
-    // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
-    // --- renderPosts関数を以下に差し替えてください ---
+    function renderPosts(snap, targetEl) {
+        targetEl.innerHTML = "";
+        const msgs = [];
+        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
+        msgs.reverse().forEach(m => {
+            const nickname = m.nickname || "名無しさん";
+            const firstChar = nickname.charAt(0);
+            const canvasId = `chart-post-${m.key}`;
+            let timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
 
-// --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
-function renderPosts(snap, targetEl) {
-    targetEl.innerHTML = "";
-    const msgs = [];
-    
-    // データを配列に変換
-    snap.forEach(c => {
-        const val = c.val();
-        msgs.push({ key: c.key, ...val });
-    });
-    
-    // 新しい順に並べる
-    msgs.reverse().forEach(m => {
-        // データの安全性を確保（データが空でもエラーにしない）
-        const nickname = m.nickname || "名無しさん";
-        const text = m.text || "";
-        const firstChar = nickname.charAt(0);
-        const canvasId = `chart-post-${m.key}`;
-        
-        // 日付の変換（timestampがない場合は現在時刻、または不明と表示）
-        let timeStr = "不明";
-        if (m.timestamp) {
-            try {
-                timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } catch(e) { console.error(e); }
-        }
-
-        const div = document.createElement('div');
-        div.className = 'msg-card';
-        div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
-                <canvas id="${canvasId}" width="45" height="45"></canvas>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                            background: white; width: 22px; height: 22px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-                    ${firstChar}
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
+                    <canvas id="${canvasId}" width="45" height="45"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
+                                background: white; width: 22px; height: 22px; border-radius: 50%;
+                                display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                        ${firstChar}
+                    </div>
                 </div>
-            </div>
-            <div class="msg-right">
-                <div class="msg-header">
-                    <span class="msg-user">${nickname}</span>
-                    <span class="msg-date">${timeStr}</span>
+                <div class="msg-right">
+                    <div class="msg-header">
+                        <span class="msg-user">${nickname}</span>
+                        <span class="msg-date">${timeStr}</span>
+                    </div>
+                    <div class="msg-text">${m.text || ""}</div>
                 </div>
-                <div class="msg-text">${text}</div>
-            </div>
-        `;
-        targetEl.appendChild(div);
+            `;
+            targetEl.appendChild(div);
 
-        // グラフデータの復元（portfolioがない古いデータの場合は[1]を入れる）
-        let pData = m.portfolio;
-        if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            // 旧コードのデータ形式（ac, sp, cash）をチェックして変換を試みる
-            const oldAc = parseInt(m.ac) || 0;
-            const oldSp = parseInt(m.sp) || 0;
-            const oldCash = parseInt(m.cash) || 0;
-            pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
-        }
-
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: pData,
-                    backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '70%',
-                responsive: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: []
+            let pData = m.portfolio;
+            if (!pData || !Array.isArray(pData) || pData.length === 0) {
+                const oldTotal = (parseInt(m.ac)||0) + (parseInt(m.sp)||0) + (parseInt(m.cash)||0);
+                pData = oldTotal > 0 ? [parseInt(m.ac)||0, parseInt(m.sp)||0, parseInt(m.cash)||0] : [1];
             }
+
+            new Chart(document.getElementById(canvasId).getContext('2d'), {
+                type: 'doughnut',
+                data: { datasets: [{ data: pData, backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors, borderWidth: 0 }] },
+                options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
+            });
         });
-    });
-}
+    }
 
-// --- 2. 送信ボタンの処理（確実にデータを送る形） ---
-document.getElementById('chat-send-btn').onclick = async () => {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim() || !currentUser) return;
-
-    // 現在のポートフォリオ値を数値配列にする
-    const portfolioSnapshot = currentPortfolioList.length > 0 
-        ? currentPortfolioList.map(item => item.val) 
-        : [];
-
-    try {
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim() || !currentUser) return;
+        const portfolioSnapshot = currentPortfolioList.length > 0 ? currentPortfolioList.map(item => item.val) : [];
         await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, 
-            nickname: currentData.nickname || currentUser.displayName || "名無し", 
-            text: input.value, 
-            timestamp: serverTimestamp(),
-            portfolio: portfolioSnapshot,
-            // 互換性のために古い形式も少し残しておく
-            ac: currentData.ac || 0,
-            sp: currentData.sp || 0,
-            cash: currentData.cash || 0
+            uid: currentUser.uid, nickname: currentData.nickname || currentUser.displayName, 
+            text: input.value, timestamp: serverTimestamp(), portfolio: portfolioSnapshot
         });
         input.value = "";
-    } catch (e) {
-        console.error("送信エラー:", e);
-        alert("送信に失敗しました。ルールの公開を確認してください。");
-    }
-};
+    };
 
+    window.showDetails = () => {
+        const isHidden = currentData.hideAmount === true;
+        const total = currentPortfolioList.reduce((s, i) => s + i.val, 0);
+        document.getElementById('detail-list').innerHTML = currentPortfolioList.map(item => `
+            <li class="detail-item">
+                <div><span class="chip-dot" style="background:${item.color}"></span>${item.name}</div>
+                <div style="text-align:right;">
+                    <b>${isHidden ? "¥********" : "¥"+item.val.toLocaleString()}</b><br>
+                    <small>${total ? ((item.val/total)*100).toFixed(1) : 0}%</small>
+                </div>
+            </li>
+        `).join('');
+        document.getElementById('detail-modal').style.display = 'block';
+    };
+
+    window.showSettings = () => {
+        const d = currentData;
+        document.getElementById('set-hide-amount').checked = d.hideAmount || false;
+        document.getElementById('set-nickname').value = d.nickname || "";
+        document.getElementById('set-bio').value = d.bio || "";
+        document.getElementById('set-target-profit').value = d.targetProfit || "";
+        document.getElementById('set-ac').value = d.ac || "";
+        document.getElementById('set-sp').value = d.sp || "";
+        document.getElementById('stock-list-container').innerHTML = "";
+        if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
+        document.getElementById('settings-modal').style.display = 'block';
+    };
+
+    window.addStockRow = (name = "", val = "") => {
+        const row = document.createElement('div');
+        row.className = 'stock-row';
+        row.innerHTML = `<input type="text" placeholder="銘柄" value="${name}" style="flex:2"><input type="number" placeholder="万円" value="${val}" style="flex:1"><button onclick="this.parentElement.remove()" style="border:none; background:none; color:red;">✕</button>`;
+        document.getElementById('stock-list-container').appendChild(row);
+    };
+
+    window.saveSettings = async () => {
+        const stocks = Array.from(document.querySelectorAll('.stock-row')).map(row => ({
+            name: row.querySelectorAll('input')[0].value, val: row.querySelectorAll('input')[1].value
+        })).filter(s => s.name && s.val);
+        await update(ref(db, `users/${currentUser.uid}`), {
+            hideAmount: document.getElementById('set-hide-amount').checked,
+            nickname: document.getElementById('set-nickname').value || currentUser.displayName,
+            bio: document.getElementById('set-bio').value,
+            targetProfit: parseInt(document.getElementById('set-target-profit').value) || 0,
+            ac: parseInt(document.getElementById('set-ac').value) || 0,
+            sp: parseInt(document.getElementById('set-sp').value) || 0,
+            stocks: stocks
+        });
+        hideSettings();
+    };
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
