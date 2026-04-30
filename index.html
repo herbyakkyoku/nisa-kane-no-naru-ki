@@ -6,15 +6,17 @@
     <title>みんなのNISA - ポートフォリオSNS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2ecc71; --sp-color: #f39c12; --cash-color: #bdc3c7; --accent: #4285F4; --bg: #f8fafc; }
+        :root { --primary: #2ecc71; --accent: #4285F4; --bg: #f8fafc; }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
         .app-container { width: 100%; max-width: 480px; position: relative; }
         
+        /* ヘッダー */
         .header { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: center; align-items: center; position: sticky; top: 0; z-index: 100; }
         .logo { font-size: 1.1rem; font-weight: 900; color: var(--primary); }
 
         .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
+        /* ダッシュボード */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
         .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
         .dashboard-right { flex: 1; }
@@ -26,20 +28,6 @@
             border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); pointer-events: none;
         }
 
-        /* 凡例（カラーチップ）を2列のグリッドに変更 */
-        .legends-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 2列 */
-            gap: 6px;
-            margin-top: 12px;
-        }
-        .legend-chip {
-            display: flex; align-items: center; gap: 6px; background: #f1f5f9;
-            padding: 4px 8px; border-radius: 20px; font-size: 0.65rem; color: #475569;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        
         .bio-text { font-size: 0.8rem; line-height: 1.4; color: #475569; margin-bottom: 12px; min-height: 3em; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -61,18 +49,31 @@
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
         .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         
+        /* 詳細リスト */
         .detail-list { list-style: none; padding: 0; margin-top: 20px; }
         .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         .detail-left { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: bold; }
+        .chip-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
         .detail-right { text-align: right; }
         .detail-amount { font-size: 0.85rem; color: #1e293b; font-weight: bold; }
         .detail-percent { font-size: 0.7rem; color: #64748b; }
 
+        /* 掲示板 */
+        .chat-container { padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 100px; }
+        .msg-card { background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .msg-user { font-size: 0.75rem; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
+        .msg-text { font-size: 0.9rem; color: #1e293b; }
+        .chat-input-bar { position: fixed; bottom: 85px; width: calc(100% - 30px); max-width: 450px; display: flex; gap: 8px; background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 900; }
+        .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
+        .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; }
+
+        /* 設定 */
         .input-item { margin-bottom: 15px; }
         .input-item label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; }
         .input-item input, .input-item textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
         .stock-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .btn-remove { background: #ff7675; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
@@ -85,6 +86,7 @@
 
     <div id="login-section" class="card" style="margin-top: 50px; text-align: center;">
         <h2 style="margin-top:0;">ポートフォリオを公開しよう</h2>
+        <p style="font-size:0.8rem; color:#64748b; margin-bottom:25px;">Google連携で簡単に始められます</p>
         <button id="btn-login" class="btn-primary" style="background:#333; width:100%; margin:0;">Googleでログイン</button>
     </div>
 
@@ -96,7 +98,6 @@
                         <canvas id="myChart"></canvas>
                         <img id="chart-avatar" class="chart-center-icon" src="" alt="">
                     </div>
-                    <div id="chart-legends" class="legends-container"></div>
                 </div>
                 <div class="dashboard-right">
                     <div id="display-bio" class="bio-text">自己紹介を書いてみましょう</div>
@@ -112,12 +113,20 @@
         <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
     </div>
 
+    <div id="chat-content" class="hidden">
+        <div id="chat-messages" class="chat-container"></div>
+        <div class="chat-input-bar">
+            <input type="text" id="chat-input" placeholder="今の相場はどう？">
+            <button id="chat-send-btn" class="chat-send-btn">送信</button>
+        </div>
+    </div>
+
     <nav class="nav-bar hidden" id="global-nav">
-        <div class="nav-item active" onclick="switchTab('main')">
+        <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 4 4 7-7"/></svg>
             <span class="nav-label">マイ資産</span>
         </div>
-        <div class="nav-item" onclick="switchTab('chat')">
+        <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="nav-label">掲示板</span>
         </div>
@@ -136,21 +145,21 @@
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin:0;">ポートフォリオ設定</h3>
         <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
-        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="3" maxlength="100"></textarea></div>
+        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="3" maxlength="100" placeholder="投資スタンスなど"></textarea></div>
         <div class="input-item"><label>想定利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
         <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
         <div id="stock-list-container"></div>
-        <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 銘柄を追加する</button>
-        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存</button>
+        <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 個別銘柄を追加する</button>
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存して更新</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -168,7 +177,7 @@
     let currentUser = null;
     let myChart = null;
     let currentPortfolioData = [];
-    const stockColors = ['#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
+    const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
 
     onAuthStateChanged(auth, user => {
         if(user) {
@@ -178,6 +187,7 @@
             document.getElementById('global-nav').classList.remove('hidden');
             document.getElementById('chart-avatar').src = user.photoURL;
             onValue(ref(db, `users/${currentUser.uid}`), snap => updateMyUI(snap.val() || {}));
+            initChat();
         }
     });
 
@@ -187,27 +197,18 @@
         const cash = (parseInt(data.cash) || 0);
         const stocks = data.stocks || [];
         
-        let list = [
-            { name: '全世界', val: ac, color: '#2ecc71' },
-            { name: 'S&P500', val: sp, color: '#f39c12' }
-        ];
-        stocks.forEach((s, i) => list.push({ name: s.name, val: (parseInt(s.val) || 0) * 10000, color: stockColors[i % stockColors.length] }));
-        list = list.filter(item => item.val > 0).sort((a, b) => b.val - a.val);
+        let list = [];
+        if (ac > 0) list.push({ name: '全世界', val: ac, color: '#2ecc71' });
+        if (sp > 0) list.push({ name: 'S&P500', val: sp, color: '#f39c12' });
+        stocks.forEach((s, i) => list.push({ name: s.name, val: (parseInt(s.val) || 0) * 10000, color: stockColors[(i + 2) % stockColors.length] }));
+        
+        list.sort((a, b) => b.val - a.val);
         if (cash > 0) list.push({ name: '現金', val: cash, color: '#bdc3c7' });
 
         currentPortfolioData = list;
         const total = list.reduce((s, i) => s + i.val, 0);
 
-        // 凡例チップの表示
-        const legendBox = document.getElementById('chart-legends');
-        legendBox.innerHTML = list.map(item => `
-            <div class="legend-chip">
-                <span class="chip-dot" style="background:${item.color}"></span>
-                ${item.name} ${total ? Math.round((item.val/total)*100) : 0}%
-            </div>
-        `).join('');
-
-        // 指標
+        // 指標更新
         const riskTotal = list.filter(i => i.name !== '現金').reduce((s, i) => s + i.val, 0);
         document.getElementById('display-bio').innerText = data.bio || "自己紹介を書いてみましょう";
         document.getElementById('val-profit').innerText = `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
@@ -215,6 +216,7 @@
         document.getElementById('val-likes').innerText = data.likes || 0;
         document.getElementById('val-total').innerText = `¥${total.toLocaleString()}`;
 
+        // グラフ描画
         const canvas = document.getElementById('myChart');
         if (myChart) myChart.destroy();
         myChart = new Chart(canvas.getContext('2d'), {
@@ -223,16 +225,22 @@
                 labels: list.map(i => i.name),
                 datasets: [{ data: list.map(i => i.val), backgroundColor: list.map(i => i.color), borderWidth: 0 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: '75%', 
+                plugins: { legend: { display: false }, tooltip: { enabled: false } } 
+            }
         });
     }
 
+    // タップ詳細表示
     window.showDetails = () => {
         const total = currentPortfolioData.reduce((s, i) => s + i.val, 0);
         document.getElementById('detail-list').innerHTML = currentPortfolioData.map(item => `
             <li class="detail-item">
                 <div class="detail-left">
-                    <span class="chip-dot" style="background:${item.color}; width:12px; height:12px;"></span>
+                    <span class="chip-dot" style="background:${item.color}"></span>
                     ${item.name}
                 </div>
                 <div class="detail-right">
@@ -243,9 +251,43 @@
         `).join('');
         document.getElementById('detail-modal').style.display = 'block';
     };
-
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
 
+    // タブ切り替え
+    window.switchTab = (tab) => {
+        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
+        document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`nav-${tab}`).classList.add('active');
+    };
+
+    // 掲示板ロジック
+    function initChat() {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), (snap) => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = "";
+            snap.forEach(child => {
+                const m = child.val();
+                const div = document.createElement('div');
+                div.className = 'msg-card';
+                div.innerHTML = `<div class="msg-user">${m.nickname}</div><div class="msg-text">${m.text}</div>`;
+                container.prepend(div);
+            });
+        });
+    }
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        const snap = await get(ref(db, `users/${currentUser.uid}`));
+        const u = snap.val() || {};
+        await push(ref(db, 'messages/room_0'), {
+            nickname: u.nickname || currentUser.displayName, text: input.value, timestamp: serverTimestamp()
+        });
+        input.value = "";
+    };
+
+    // 設定管理
     window.addStockRow = (name = "", val = "") => {
         const container = document.getElementById('stock-list-container');
         const row = document.createElement('div');
@@ -285,11 +327,6 @@
         document.getElementById('settings-modal').style.display = 'block';
     };
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-
-    window.switchTab = (tab) => {
-        document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
-        // チャット等の他タブは必要に応じて実装
-    };
     document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
