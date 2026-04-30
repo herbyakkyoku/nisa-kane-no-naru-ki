@@ -271,63 +271,71 @@ async function renderPosts(snap, targetEl) {
     const msgs = [];
     snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
 
+    // 投稿をループして描画
     for (const m of msgs.reverse()) {
         const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
-        const canvasId = `chart-post-${m.key}`;
+        const canvasId = `chart-icon-${m.key}`; // 各投稿固有のID
 
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
             <div class="msg-left" style="position: relative; width: 45px; height: 45px;">
-                <canvas id="${canvasId}" width="45" height="45"></canvas>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                            background: rgba(255,255,255,0.8); width: 25px; height: 25px; 
-                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <canvas id="${canvasId}" width="45" height="45" style="display: block;"></canvas>
+                <div class="icon-text-overlay" style="
+                    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    font-size: 10px; font-weight: bold; color: #fff; background: #7d6b63;
+                    width: 26px; height: 26px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    pointer-events: none;
+                ">
                     ${firstChar}
                 </div>
             </div>
             <div class="msg-right">
                 <div class="msg-header">
                     <span class="msg-user">${m.nickname}</span>
-                    <span class="msg-date">${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="msg-date">${new Date(m.timestamp).toLocaleString()}</span>
                 </div>
                 <div class="msg-text">${m.text}</div>
             </div>
         `;
         targetEl.appendChild(div);
 
-        // データの再取得と描画
-        const userSnap = await get(ref(db, `users/${m.uid}`));
-        const userData = userSnap.val() || {};
-        
-        const uAc = parseInt(userData.ac) || 0;
-        const uSp = parseInt(userData.sp) || 0;
-        const uStocks = userData.stocks || [];
-        const uDataList = [uAc, uSp, ...uStocks.map(s => parseInt(s.val) || 0)].filter(v => v > 0);
+        // --- 同期処理：投稿者の資産データを取得してグラフを描く ---
+        try {
+            const userRef = ref(db, `users/${m.uid}`); // 投稿者のUIDで参照
+            const userSnap = await get(userRef);
+            const userData = userSnap.val() || {};
 
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: uDataList.length ? uDataList : [1],
-                    backgroundColor: uDataList.length ? stockColors : ['#eee'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '70%',
-                responsive: false, // サイズ固定のため
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: []
-            }
-        });
+            // AC, SP, Stocksの数値を配列にまとめる
+            const ac = parseFloat(userData.ac) || 0;
+            const sp = parseFloat(userData.sp) || 0;
+            const stocks = userData.stocks ? userData.stocks.map(s => parseFloat(s.val) || 0) : [];
+            const chartData = [ac, sp, ...stocks].filter(v => v > 0);
+
+            // グラフ描画
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: chartData.length > 0 ? chartData : [1], // データがない場合はグレーの円
+                        backgroundColor: chartData.length > 0 ? stockColors : ['#e0e0e0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '70%', // 中央を空ける
+                    responsive: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        } catch (e) {
+            console.error("アイコンの同期に失敗しました", e);
+        }
     }
 }
-
-
 
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
