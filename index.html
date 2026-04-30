@@ -114,7 +114,6 @@
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
         <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
         <div class="input-item"><label>現預金 (万円)</label><input type="number" id="set-cash"></div>
-        <div class="input-item"><label>合計評価損益 (円)</label><input type="number" id="set-profit" placeholder="例: 150000"></div>
         
         <div class="input-item">
             <label>個別株・その他</label>
@@ -147,43 +146,8 @@
     let currentUser = null;
     let myChart = null;
 
+    // 個別株用のカラーパレット
     const stockColors = ['#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f', '#d35400'];
-
-    // --- ロジック：データを金額順にソートしてChart.js用の配列を作る関数 ---
-    function getSortedChartData(data) {
-        const ac = (parseInt(data.ac) || 0) * 10000;
-        const sp = (parseInt(data.sp) || 0) * 10000;
-        const cash = (parseInt(data.cash) || 0) * 10000;
-        const stocks = data.stocks || [];
-
-        // 全資産を1つの配列にまとめる
-        let list = [
-            { label: '全世界', value: ac, color: '#2ecc71' },
-            { label: 'S&P500', value: sp, color: '#f39c12' }
-        ];
-
-        stocks.forEach((s, i) => {
-            list.push({
-                label: s.name,
-                value: (parseInt(s.val) || 0) * 10000,
-                color: stockColors[i % stockColors.length]
-            });
-        });
-
-        // 金額が大きい順にソート
-        list.sort((a, b) => b.value - a.value);
-
-        // 最後に現金を結合（現金は一番最後に固定したい場合はここを調整）
-        list.push({ label: '現金', value: cash, color: '#bdc3c7' });
-
-        return {
-            labels: list.map(item => item.label),
-            values: list.map(item => item.value),
-            colors: list.map(item => item.color),
-            total: list.reduce((sum, item) => sum + item.value, 0),
-            riskTotal: list.filter(item => item.label !== '現金').reduce((sum, item) => sum + item.value, 0)
-        };
-    }
 
     const centerTextPlugin = {
         id: 'centerText',
@@ -192,13 +156,9 @@
             const { ctx, chartArea: { width, height } } = chart;
             ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#64748b';
-            ctx.fillText('評価損益', width / 2, height / 2 - 15);
-            
-            const profit = chart.config.options.elements.center.value;
-            ctx.font = '900 20px sans-serif'; 
-            ctx.fillStyle = profit >= 0 ? '#ff7675' : '#4285F4';
-            const sign = profit >= 0 ? '+' : '';
-            ctx.fillText(`${sign}¥${profit.toLocaleString()}`, width / 2, height / 2 + 12);
+            ctx.fillText('推定利率', width / 2, height / 2 - 15);
+            ctx.font = '900 22px sans-serif'; ctx.fillStyle = '#1e293b';
+            ctx.fillText(chart.config.options.elements.center.text, width / 2, height / 2 + 12);
             ctx.restore();
         }
     };
@@ -240,33 +200,52 @@
     };
 
     function updateMyUI(data) {
-        const sorted = getSortedChartData(data);
-        const profit = parseInt(data.profit) || 0;
+        const ac = parseInt(data.ac) || 0;
+        const sp = parseInt(data.sp) || 0;
+        const cash = parseInt(data.cash) || 0;
+        const stocks = data.stocks || [];
+        
+        const stocksValues = stocks.map(s => (parseInt(s.val) || 0) * 10000);
+        const stocksTotal = stocksValues.reduce((a, b) => a + b, 0);
+        const total = ac + sp + cash + stocksTotal;
+        
+        const riskRatio = total ? Math.round(((ac + sp + stocksTotal) / total) * 100) : 0;
+        const rate = total ? (((ac * 0.05) + (sp * 0.08) + (stocksTotal * 0.04)) / total * 100).toFixed(1) : "0.0";
 
-        document.getElementById('total-amount-val').innerText = data.showAmount ? `¥${sorted.total.toLocaleString()}` : "非公開";
-        document.getElementById('risk-ratio-val').innerText = `${sorted.total ? Math.round((sorted.riskTotal / sorted.total) * 100) : 0}%`;
+        document.getElementById('total-amount-val').innerText = `¥${total.toLocaleString()}`;
+        document.getElementById('risk-ratio-val').innerText = `${riskRatio}%`;
+
+        // 並び順: 全世界(ac) -> S&P500(sp) -> 個別株(stocks) -> 現金(cash)
+        const labels = ['全世界', 'S&P500', ...stocks.map(s => s.name), '現金'];
+        const chartData = [ac, sp, ...stocksValues, cash];
+        const colors = ['#2ecc71', '#f39c12', ...stocks.map((_, i) => stockColors[i % stockColors.length]), '#bdc3c7'];
 
         const canvas = document.getElementById('myChart');
         if (!canvas) return;
         if (myChart) myChart.destroy();
         myChart = new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
-            data: { labels: sorted.labels, datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }] },
+            data: { labels: labels, datasets: [{ data: chartData, backgroundColor: colors, borderWidth: 0 }] },
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '75%', 
                 plugins: { legend: { display: false } },
-                elements: { center: { value: profit } } 
+                elements: { center: { text: rate + "%" } } 
             }
         });
     }
 
     function createMiniChart(canvasId, data) {
-        const sorted = getSortedChartData(data);
+        const ac = data.ac || 0; const sp = data.sp || 0; const cash = data.cash || 0;
+        const stocks = data.stocks || [];
+        const stocksValues = stocks.map(s => (parseInt(s.val) || 0) * 10000);
+        const chartData = [ac, sp, ...stocksValues, cash];
+        const colors = ['#2ecc71', '#f39c12', ...stocks.map((_, i) => stockColors[i % stockColors.length]), '#bdc3c7'];
+
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         new Chart(canvas.getContext('2d'), {
             type: 'doughnut',
-            data: { datasets: [{ data: sorted.values, backgroundColor: sorted.colors, borderWidth: 0 }] },
+            data: { datasets: [{ data: chartData, backgroundColor: colors, borderWidth: 0 }] },
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '65%',
                 plugins: { legend: { display: false }, tooltip: { enabled: false } }
@@ -281,18 +260,12 @@
             const drawTasks = [];
             snap.forEach(child => {
                 const m = child.val();
-                const sorted = getSortedChartData(m);
-                const profitText = m.profit ? ` / 損益: ${m.profit >= 0 ? '+' : ''}${m.profit.toLocaleString()}` : "";
-                const amountText = m.showAmount ? ` / 資産: ¥${sorted.total.toLocaleString()}` : " / 資産: 非公開";
-                
+                const stocksTotal = (m.stocks || []).reduce((sum, s) => sum + (parseInt(s.val) || 0) * 10000, 0);
+                const total = (m.ac||0) + (m.sp||0) + (m.cash||0) + stocksTotal;
+                const ratio = total ? Math.round(((m.ac + m.sp + stocksTotal) / total) * 100) : 0;
                 const div = document.createElement('div');
                 div.className = 'msg-card';
-                div.innerHTML = `
-                    <div class="mini-chart-wrapper"><canvas id="chart-${child.key}"></canvas></div>
-                    <div class="msg-body">
-                        <div class="msg-info"><strong>${m.nickname}</strong><br>リスク比: ${Math.round((sorted.riskTotal/sorted.total)*100)}%${amountText}${profitText}</div>
-                        <div class="msg-text">${m.text}</div>
-                    </div>`;
+                div.innerHTML = `<div class="mini-chart-wrapper"><canvas id="chart-${child.key}"></canvas></div><div class="msg-body"><div class="msg-info"><strong>${m.nickname}</strong> / リスク比: ${ratio}%</div><div class="msg-text">${m.text}</div></div>`;
                 container.prepend(div);
                 drawTasks.push({ id: `chart-${child.key}`, data: m });
             });
@@ -307,9 +280,7 @@
         const u = snap.val() || {};
         await push(ref(db, 'messages/room_0'), {
             nickname: u.nickname || currentUser.displayName, text: input.value,
-            ac: u.ac ? u.ac/10000 : 0, sp: u.sp ? u.sp/10000 : 0, cash: u.cash ? u.cash/10000 : 0, 
-            stocks: u.stocks||[], profit: u.profit || 0, showAmount: u.showAmount || false,
-            timestamp: serverTimestamp()
+            ac: u.ac||0, sp: u.sp||0, cash: u.cash||0, stocks: u.stocks||[], timestamp: serverTimestamp()
         });
         input.value = "";
     };
@@ -324,7 +295,6 @@
             ac: (parseInt(document.getElementById('set-ac').value) || 0) * 10000,
             sp: (parseInt(document.getElementById('set-sp').value) || 0) * 10000,
             cash: (parseInt(document.getElementById('set-cash').value) || 0) * 10000,
-            profit: parseInt(document.getElementById('set-profit').value) || 0,
             stocks: stocks
         });
         hideSettings();
@@ -338,7 +308,6 @@
         document.getElementById('set-ac').value = d.ac ? d.ac / 10000 : "";
         document.getElementById('set-sp').value = d.sp ? d.sp / 10000 : "";
         document.getElementById('set-cash').value = d.cash ? d.cash / 10000 : "";
-        document.getElementById('set-profit').value = d.profit || "";
         const container = document.getElementById('stock-list-container');
         container.innerHTML = "";
         if(d.stocks) d.stocks.forEach(s => addStockRow(s.name, s.val));
