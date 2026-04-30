@@ -275,14 +275,20 @@ function renderPosts(snap, targetEl) {
     const msgs = [];
     snap.forEach(c => msgs.push({key: c.key, ...c.val()}));
     
+    // 新しい順に並べる
     msgs.reverse().forEach(m => {
         const firstChar = m.nickname ? m.nickname.charAt(0) : "?";
         const canvasId = `chart-post-${m.key}`;
         
-        // タイムスタンプが確定していない場合は空文字にする対策
-        const timeStr = (m.timestamp && typeof m.timestamp === 'number') 
-            ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-            : "...";
+        // 【修正ポイント】日付が変でもエラーにならないようにガードを入れる
+        let timeStr = "...";
+        if (m.timestamp && typeof m.timestamp === 'number') {
+            try {
+                timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } catch(e) {
+                timeStr = "不明";
+            }
+        }
 
         const div = document.createElement('div');
         div.className = 'msg-card';
@@ -298,14 +304,15 @@ function renderPosts(snap, targetEl) {
             </div>
             <div class="msg-right">
                 <div class="msg-header">
-                    <span class="msg-user">${m.nickname}</span>
+                    <span class="msg-user">${m.nickname || '名無し'}</span>
                     <span class="msg-date">${timeStr}</span>
                 </div>
-                <div class="msg-text">${m.text}</div>
+                <div class="msg-text">${m.text || ''}</div>
             </div>
         `;
         targetEl.appendChild(div);
 
+        // グラフ描画
         const pData = m.portfolio || [];
         const ctx = document.getElementById(canvasId).getContext('2d');
         new Chart(ctx, {
@@ -326,6 +333,7 @@ function renderPosts(snap, targetEl) {
         });
     });
 }
+
 
 
     document.getElementById('chat-send-btn').onclick = async () => {
