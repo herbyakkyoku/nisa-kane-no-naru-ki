@@ -266,23 +266,24 @@
     // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
     // --- renderPosts関数を以下に差し替えてください ---
 
-// --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
-// グラフのインスタンスを保持するオブジェクトを関数の外（または上）に定義
+// グラフのインスタンスを保持するオブジェクト（関数の外に配置）
 const chartInstances = {};
 
 function renderPosts(snap, targetEl) {
-    // 1. まずHTML構造を一気に構築（これまでの処理と同様）
+    if (!targetEl) return;
     targetEl.innerHTML = "";
     const msgs = [];
+    
     snap.forEach(c => {
         msgs.push({ key: c.key, ...c.val() });
     });
     
+    // 最新順に表示
     msgs.reverse().forEach(m => {
         const nickname = m.nickname || "名無しさん";
         const text = m.text || "";
         const firstChar = nickname.charAt(0);
-        const canvasId = `chart-post-${m.key}`; // FirebaseのKeyをIDに使用
+        const canvasId = `chart-post-${m.key}`;
         
         let timeStr = "不明";
         if (m.timestamp) {
@@ -313,42 +314,70 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // --- ここからグラフ描画の修正 ---
-        
-        // ① すでに同じIDのグラフが存在していたら破棄する
+        // --- グラフ描画ロジック ---
+        // 既存のインスタンスがあれば破棄（エラー防止のため optional chaining ?. を使用）
         if (chartInstances[canvasId]) {
             chartInstances[canvasId].destroy();
         }
 
-        // ② ポートフォリオデータの準備
         let pData = m.portfolio;
+        // データがない、あるいは不正な場合のフォールバック
         if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            const oldAc = parseInt(m.ac) || 0;
-            const oldSp = parseInt(m.sp) || 0;
-            const oldCash = parseInt(m.cash) || 0;
-            pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
+            pData = [1]; // グレーの円を表示
         }
 
-        // ③ グラフを描画し、インスタンスを保存しておく
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        chartInstances[canvasId] = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: pData,
-                    backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '70%',
-                responsive: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: []
-            }
-        });
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: pData,
+                        backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    events: []
+                }
+            });
+        }
     });
 }
+
+// 送信ボタンのクリックイベント
+document.getElementById('chat-send-btn').onclick = async () => {
+    const input = document.getElementById('chat-input');
+    const msgText = input.value.trim();
+    
+    if(!msgText || !currentUser) return;
+
+    // 現在のポートフォリオを保存用の数値配列にする
+    const portfolioSnapshot = currentPortfolioList.length > 0 
+        ? currentPortfolioList.map(item => Number(item.val)) 
+        : [1];
+
+    try {
+        // push を使って新しいノードとして追加（既存の投稿は消えません）
+        await push(ref(db, 'messages/room_0'), {
+            uid: currentUser.uid, 
+            nickname: currentData.nickname || currentUser.displayName || "名無し", 
+            text: msgText, 
+            timestamp: serverTimestamp(),
+            portfolio: portfolioSnapshot
+        });
+        input.value = ""; // 入力欄をクリア
+    } catch (e) {
+        console.error("送信エラー:", e);
+        alert("投稿に失敗しました。");
+    }
+};
+
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
