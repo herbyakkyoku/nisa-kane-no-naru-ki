@@ -231,15 +231,26 @@
     }
 
     // タブ切り替え（プロフィールカードの表示制御を追加）
-    window.switchTab = (tab) => {
-        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
-        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
-        // 掲示板（chat）の時はプロフィールカードを隠す指示
-        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
-        
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`nav-${tab}`).classList.add('active');
-    };
+    // タブ切り替えの修正
+window.switchTab = (tab) => {
+    const isChat = tab === 'chat';
+    document.getElementById('main-view').classList.toggle('hidden', isChat);
+    document.getElementById('chat-view').classList.toggle('hidden', !isChat);
+    document.getElementById('profile-card').classList.toggle('hidden', isChat);
+    
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`nav-${tab}`).classList.add('active');
+
+    // --- 追加：掲示板に切り替えた時、強制的に再描画させる ---
+    if (isChat) {
+        // Firebaseから最新データを取得して再レンダリングを実行
+        const chatRef = query(ref(db, 'messages/room_0'), limitToLast(50));
+        get(chatRef).then(snap => {
+            renderPosts(snap, document.getElementById('all-posts-list'));
+        });
+    }
+};
+
 
     window.switchSubTab = (sub) => {
         document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
