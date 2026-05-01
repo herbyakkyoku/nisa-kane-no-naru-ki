@@ -294,8 +294,8 @@ function renderPosts(snap, targetEl) {
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; min-width: 45px; min-height: 45px; flex-shrink: 0;">
-                <canvas id="${canvasId}"></canvas>
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0; background: #f8fafc; border-radius: 50%;">
+                <canvas id="${canvasId}" style="width: 45px !important; height: 45px !important;"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                             font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
                             background: white; width: 22px; height: 22px; border-radius: 50%;
@@ -313,24 +313,20 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // 次の描画サイクルでグラフを作成
+        // HTMLが画面に配置されるのを少し待ってから描画
         setTimeout(() => {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
 
-            // 重要：Canvasのサイズを明示的に指定
-            canvas.width = 45;
-            canvas.height = 45;
-
-            // 既存のグラフがあれば破棄
-            if (chartInstances[canvasId]) {
-                chartInstances[canvasId].destroy();
-                delete chartInstances[canvasId];
-            }
-
+            // データの取得
             let pData = m.portfolio;
             if (!pData || !Array.isArray(pData) || pData.length === 0) {
                 pData = [1];
+            }
+
+            // 以前のインスタンスを破棄
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
             }
 
             const ctx = canvas.getContext('2d');
@@ -339,13 +335,13 @@ function renderPosts(snap, targetEl) {
                 data: {
                     datasets: [{
                         data: pData,
-                        backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
+                        backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eeeeee'] : stockColors,
                         borderWidth: 0
                     }]
                 },
                 options: {
                     cutout: '70%',
-                    responsive: false, // レスポンシブをOFFにしてサイズを固定
+                    responsive: false, // 画面サイズに合わせず、45px固定にする
                     maintainAspectRatio: true,
                     animation: false,
                     plugins: { 
@@ -354,9 +350,10 @@ function renderPosts(snap, targetEl) {
                     }
                 }
             });
-        }, 10); // わずかに待機
+        }, 100); // 100ミリ秒待機
     });
 }
+
 
 
 
