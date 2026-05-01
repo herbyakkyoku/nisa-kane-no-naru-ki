@@ -226,7 +226,13 @@
                 labels: list.map(i => i.name),
                 datasets: [{ data: list.map(i => i.val), backgroundColor: list.map(i => i.color), borderWidth: 0 }]
             },
-            options: { cutout: '75%', plugins: { legend: { display: false } } }
+            options: { 
+    cutout: '75%', 
+    plugins: { 
+        legend: { display: false },
+        tooltip: { enabled: false } // ここを追加してツールチップを無効化
+    } 
+}
         });
     }
 
