@@ -267,30 +267,28 @@
     // --- renderPosts関数を以下に差し替えてください ---
 
 // --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
+// グラフのインスタンスを保持するオブジェクトを関数の外（または上）に定義
+const chartInstances = {};
+
 function renderPosts(snap, targetEl) {
+    // 1. まずHTML構造を一気に構築（これまでの処理と同様）
     targetEl.innerHTML = "";
     const msgs = [];
-    
-    // データを配列に変換
     snap.forEach(c => {
-        const val = c.val();
-        msgs.push({ key: c.key, ...val });
+        msgs.push({ key: c.key, ...c.val() });
     });
     
-    // 新しい順に並べる
     msgs.reverse().forEach(m => {
-        // データの安全性を確保（データが空でもエラーにしない）
         const nickname = m.nickname || "名無しさん";
         const text = m.text || "";
         const firstChar = nickname.charAt(0);
-        const canvasId = `chart-post-${m.key}`;
+        const canvasId = `chart-post-${m.key}`; // FirebaseのKeyをIDに使用
         
-        // 日付の変換（timestampがない場合は現在時刻、または不明と表示）
         let timeStr = "不明";
         if (m.timestamp) {
             try {
                 timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
         const div = document.createElement('div');
@@ -315,18 +313,25 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // グラフデータの復元（portfolioがない古いデータの場合は[1]を入れる）
+        // --- ここからグラフ描画の修正 ---
+        
+        // ① すでに同じIDのグラフが存在していたら破棄する
+        if (chartInstances[canvasId]) {
+            chartInstances[canvasId].destroy();
+        }
+
+        // ② ポートフォリオデータの準備
         let pData = m.portfolio;
         if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            // 旧コードのデータ形式（ac, sp, cash）をチェックして変換を試みる
             const oldAc = parseInt(m.ac) || 0;
             const oldSp = parseInt(m.sp) || 0;
             const oldCash = parseInt(m.cash) || 0;
             pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
         }
 
+        // ③ グラフを描画し、インスタンスを保存しておく
         const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
+        chartInstances[canvasId] = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 datasets: [{
@@ -344,36 +349,6 @@ function renderPosts(snap, targetEl) {
         });
     });
 }
-
-// --- 2. 送信ボタンの処理（確実にデータを送る形） ---
-document.getElementById('chat-send-btn').onclick = async () => {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim() || !currentUser) return;
-
-    // 現在のポートフォリオ値を数値配列にする
-    const portfolioSnapshot = currentPortfolioList.length > 0 
-        ? currentPortfolioList.map(item => item.val) 
-        : [];
-
-    try {
-        await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, 
-            nickname: currentData.nickname || currentUser.displayName || "名無し", 
-            text: input.value, 
-            timestamp: serverTimestamp(),
-            portfolio: portfolioSnapshot,
-            // 互換性のために古い形式も少し残しておく
-            ac: currentData.ac || 0,
-            sp: currentData.sp || 0,
-            cash: currentData.cash || 0
-        });
-        input.value = "";
-    } catch (e) {
-        console.error("送信エラー:", e);
-        alert("送信に失敗しました。ルールの公開を確認してください。");
-    }
-};
-
 
     window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
     window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
