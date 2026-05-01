@@ -177,13 +177,14 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const auth = getAuth(app);
+    const auth = authInstance = getAuth(app);
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
     let myChart = null;
     let currentData = {};
     let currentPortfolioList = [];
+    window.chartInstances = {}; // グローバルに保持
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
 
     onAuthStateChanged(auth, user => {
@@ -220,7 +221,8 @@
         document.getElementById('val-count').innerText = `${list.length} 銘柄`;
 
         if (myChart) myChart.destroy();
-        myChart = new Chart(document.getElementById('myChart').getContext('2d'), {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        myChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: list.map(i => i.name),
@@ -230,154 +232,156 @@
         });
     }
 
-    // タブ切り替え（プロフィールカードの表示制御を追加）
-    window.switchTab = (tab) => {
-        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
-        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
-        // 掲示板（chat）の時はプロフィールカードを隠す指示
-        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
+    // --- 掲示板レンダリング ---
+    function renderPosts(snap, targetEl) {
+        if (!targetEl) return;
+        targetEl.innerHTML = "";
+        const msgs = [];
+        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
         
+        msgs.reverse().forEach(m => {
+            const nickname = m.nickname || "名無しさん";
+            const text = m.text || "";
+            const firstChar = nickname.charAt(0);
+            const canvasId = `chart-post-${m.key}`;
+            
+            let timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
+
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0; background: #eee; border-radius: 50%;">
+                    <canvas id="${canvasId}" width="45" height="45"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
+                                background: white; width: 22px; height: 22px; border-radius: 50%;
+                                display: flex; align-items: center; justify-content: center; z-index: 5;">
+                        ${firstChar}
+                    </div>
+                </div>
+                <div class="msg-right">
+                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
+                    <div class="msg-text">${text}</div>
+                </div>
+            `;
+            targetEl.appendChild(div);
+
+            // 表示されるまで待ってから描画
+            const draw = () => {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas || canvas.offsetParent === null) { setTimeout(draw, 100); return; }
+                if (window.chartInstances[canvasId]) window.chartInstances[canvasId].destroy();
+                
+                let pData = m.portfolio;
+                if (!pData || !Array.isArray(pData) || pData.length === 0) pData = [1];
+
+                window.chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: pData, backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors, borderWidth: 0 }] },
+                    options: { cutout: '70%', responsive: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            };
+            draw();
+        });
+    }
+
+    // --- 各種機能（グローバル登録） ---
+    window.switchTab = (tab) => {
+        const isChat = tab === 'chat';
+        document.getElementById('main-view').classList.toggle('hidden', isChat);
+        document.getElementById('chat-view').classList.toggle('hidden', !isChat);
+        document.getElementById('profile-card').classList.toggle('hidden', isChat);
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`nav-${tab}`).classList.add('active');
+        if (isChat) loadAllPosts();
     };
 
+    window.showSettings = () => {
+        const d = currentData;
+        document.getElementById('set-nickname').value = d.nickname || currentUser.displayName || "";
+        document.getElementById('set-bio').value = d.bio || "";
+        document.getElementById('set-target-profit').value = d.targetProfit || 0;
+        document.getElementById('set-ac').value = d.ac || 0;
+        document.getElementById('set-sp').value = d.sp || 0;
+        document.getElementById('set-hide-amount').checked = d.hideAmount || false;
+        
+        const container = document.getElementById('stock-list-container');
+        container.innerHTML = "";
+        (d.stocks || []).forEach(s => addStockRow(s.name, s.val));
+        document.getElementById('settings-modal').style.display = 'block';
+    };
+
+    window.addStockRow = (name = "", val = "") => {
+        const div = document.createElement('div');
+        div.className = 'stock-row';
+        div.innerHTML = `<input type="text" placeholder="銘柄名" value="${name}" style="flex:2">
+                         <input type="number" placeholder="万円" value="${val}" style="flex:1">
+                         <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; font-size:1.2rem;">×</button>`;
+        document.getElementById('stock-list-container').appendChild(div);
+    };
+
+    window.saveSettings = async () => {
+        const stocks = [];
+        document.querySelectorAll('.stock-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if(inputs[0].value) stocks.push({ name: inputs[0].value, val: inputs[1].value });
+        });
+        await update(ref(db, `users/${currentUser.uid}`), {
+            nickname: document.getElementById('set-nickname').value,
+            bio: document.getElementById('set-bio').value,
+            targetProfit: document.getElementById('set-target-profit').value,
+            ac: document.getElementById('set-ac').value,
+            sp: document.getElementById('set-sp').value,
+            hideAmount: document.getElementById('set-hide-amount').checked,
+            stocks: stocks
+        });
+        hideSettings();
+    };
+
+    window.showDetails = () => {
+        const listEl = document.getElementById('detail-list');
+        listEl.innerHTML = "";
+        currentPortfolioList.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'detail-item';
+            const valStr = currentData.hideAmount ? "********" : `¥${item.val.toLocaleString()}`;
+            li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valStr}</strong>`;
+            listEl.appendChild(li);
+        });
+        document.getElementById('detail-modal').style.display = 'block';
+    };
+
+    window.loadAllPosts = () => {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
+    };
+
+    window.loadMyPosts = async (mode) => {
+        if(mode === 'likes') return;
+        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
+        const snap = await get(q);
+        renderPosts(snap, document.getElementById('my-posts-list'));
+    };
+
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim() || !currentUser) return;
+        const pSnapshot = currentPortfolioList.length > 0 ? currentPortfolioList.map(item => item.val) : [1];
+        await push(ref(db, 'messages/room_0'), {
+            uid: currentUser.uid, nickname: currentData.nickname || "名無し", 
+            text: input.value, timestamp: serverTimestamp(), portfolio: pSnapshot
+        });
+        input.value = "";
+    };
+
+    window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
+    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
     window.switchSubTab = (sub) => {
         document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
         document.getElementById(`sub-tab-${sub}`).classList.add('active');
         loadMyPosts(sub);
     };
-
-    async function loadMyPosts(mode) {
-        const listEl = document.getElementById('my-posts-list');
-        listEl.innerHTML = "読込中...";
-        if(mode === 'likes') {
-            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
-            return;
-        }
-        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
-        const snap = await get(q);
-        renderPosts(snap, listEl);
-    }
-
-    function loadAllPosts() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
-    }
-
-    // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
-    // --- renderPosts関数を以下に差し替えてください ---
-
-// --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
-function renderPosts(snap, targetEl) {
-    targetEl.innerHTML = "";
-    const msgs = [];
-    
-    // データを配列に変換
-    snap.forEach(c => {
-        const val = c.val();
-        msgs.push({ key: c.key, ...val });
-    });
-    
-    // 新しい順に並べる
-    msgs.reverse().forEach(m => {
-        // データの安全性を確保（データが空でもエラーにしない）
-        const nickname = m.nickname || "名無しさん";
-        const text = m.text || "";
-        const firstChar = nickname.charAt(0);
-        const canvasId = `chart-post-${m.key}`;
-        
-        // 日付の変換（timestampがない場合は現在時刻、または不明と表示）
-        let timeStr = "不明";
-        if (m.timestamp) {
-            try {
-                timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } catch(e) { console.error(e); }
-        }
-
-        const div = document.createElement('div');
-        div.className = 'msg-card';
-        div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
-                <canvas id="${canvasId}" width="45" height="45"></canvas>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                            font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                            background: white; width: 22px; height: 22px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-                    ${firstChar}
-                </div>
-            </div>
-            <div class="msg-right">
-                <div class="msg-header">
-                    <span class="msg-user">${nickname}</span>
-                    <span class="msg-date">${timeStr}</span>
-                </div>
-                <div class="msg-text">${text}</div>
-            </div>
-        `;
-        targetEl.appendChild(div);
-
-        // グラフデータの復元（portfolioがない古いデータの場合は[1]を入れる）
-        let pData = m.portfolio;
-        if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            // 旧コードのデータ形式（ac, sp, cash）をチェックして変換を試みる
-            const oldAc = parseInt(m.ac) || 0;
-            const oldSp = parseInt(m.sp) || 0;
-            const oldCash = parseInt(m.cash) || 0;
-            pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
-        }
-
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: pData,
-                    backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '70%',
-                responsive: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: []
-            }
-        });
-    });
-}
-
-// --- 2. 送信ボタンの処理（確実にデータを送る形） ---
-document.getElementById('chat-send-btn').onclick = async () => {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim() || !currentUser) return;
-
-    // 現在のポートフォリオ値を数値配列にする
-    const portfolioSnapshot = currentPortfolioList.length > 0 
-        ? currentPortfolioList.map(item => item.val) 
-        : [];
-
-    try {
-        await push(ref(db, 'messages/room_0'), {
-            uid: currentUser.uid, 
-            nickname: currentData.nickname || currentUser.displayName || "名無し", 
-            text: input.value, 
-            timestamp: serverTimestamp(),
-            portfolio: portfolioSnapshot,
-            // 互換性のために古い形式も少し残しておく
-            ac: currentData.ac || 0,
-            sp: currentData.sp || 0,
-            cash: currentData.cash || 0
-        });
-        input.value = "";
-    } catch (e) {
-        console.error("送信エラー:", e);
-        alert("送信に失敗しました。ルールの公開を確認してください。");
-    }
-};
-
-
-    window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
-    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
+
 </body>
 </html>
