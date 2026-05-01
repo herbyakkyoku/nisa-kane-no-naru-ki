@@ -260,18 +260,20 @@
         onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
-    // アイコンクリック時にその投稿の銘柄詳細を表示する関数
+    // アイコンクリック時の処理
     window.showPostDetails = (mKey) => {
         const listEl = document.getElementById('detail-list');
         listEl.innerHTML = "";
         
-        // メッセージデータから該当する投稿のフルリストを構築
         get(ref(db, `messages/room_0/${mKey}`)).then(snap => {
             const m = snap.val();
             if(!m) return;
 
             const isHidden = m.hideAmount === true;
-            const fullList = m.fullPortfolioList || []; // 送信時に保存した詳細データ
+            const fullList = m.fullPortfolioList || [];
+            
+            // 全合計額を算出（％計算用）
+            const totalVal = fullList.reduce((sum, item) => sum + item.val, 0);
 
             if(fullList.length === 0) {
                 listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem;">内訳データがありません</p>';
@@ -279,8 +281,14 @@
                 fullList.forEach(item => {
                     const li = document.createElement('li');
                     li.className = 'detail-item';
-                    const valStr = isHidden ? "********" : `¥${item.val.toLocaleString()}`;
-                    li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valStr}</strong>`;
+                    
+                    // 割合を計算
+                    const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
+                    
+                    // 伏せ字設定がONなら金額だけ隠し、銘柄名と％を表示する
+                    const valDisplay = isHidden ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
+                    
+                    li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valDisplay}</strong>`;
                     listEl.appendChild(li);
                 });
             }
@@ -372,8 +380,8 @@
                 text: input.value, 
                 timestamp: serverTimestamp(),
                 portfolio: portfolioValues,
-                fullPortfolioList: currentPortfolioList, // 詳細表示用に現在のリストを丸ごと保存
-                hideAmount: currentData.hideAmount || false, // 投稿時点の伏せ字設定を保存
+                fullPortfolioList: currentPortfolioList,
+                hideAmount: currentData.hideAmount || false, 
                 ac: currentData.ac || 0,
                 sp: currentData.sp || 0
             });
@@ -428,10 +436,16 @@
     window.showDetails = () => {
         const listEl = document.getElementById('detail-list');
         listEl.innerHTML = "";
+        
+        const totalVal = currentPortfolioList.reduce((sum, item) => sum + item.val, 0);
+
         currentPortfolioList.forEach(item => {
             const li = document.createElement('li');
             li.className = 'detail-item';
-            const valStr = currentData.hideAmount ? "********" : `¥${item.val.toLocaleString()}`;
+            
+            const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
+            const valStr = currentData.hideAmount ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
+            
             li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valStr}</strong>`;
             listEl.appendChild(li);
         });
