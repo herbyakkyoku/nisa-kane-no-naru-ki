@@ -259,48 +259,12 @@
         renderPosts(snap, listEl);
     }
 
-    function initChat() {
-        // limitToLast(50) で最新50件を監視
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), (snap) => {
-            const container = document.getElementById('chat-messages');
-            if (!container) return;
-
-            const messages = [];
-            snap.forEach(child => {
-                // keyも含めて保持（一意のIDとして利用可能）
-                messages.push({ key: child.key, ...child.val() });
-            });
-            
-            // 最新が一番上にくるように並び替え
-            messages.sort((a, b) => b.timestamp - a.timestamp);
-
-            // 一旦メモリ上でHTMLを組み立ててから一気に反映させる（消失・チラつき防止）
-            const html = messages.map(m => {
-                const ac = m.ac || 0;
-                const sp = m.sp || 0;
-                const cash = m.cash || 0;
-                const total = ac + sp + cash;
-                const ratio = total ? Math.round(((ac + sp) / total) * 100) : 0;
-                const amtLabel = m.showAmount ? ` / 総資産:¥${total.toLocaleString()}` : "";
-                const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
-
-                return `
-                    <div class="msg-card" data-key="${m.key}">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.8rem; font-weight:bold; color:var(--primary);">${m.nickname}</span>
-                            <span style="font-size:0.65rem; color:#cbd5e1;">${timeStr}</span>
-                        </div>
-                        <div style="font-size:0.7rem; color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:5px; margin-bottom:8px; display:inline-block;">
-                            金融比率: ${ratio}%${amtLabel}
-                        </div>
-                        <div style="font-size:0.95rem; color:#1e293b; line-height:1.5;">${m.text}</div>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = html;
-        });
+    function loadAllPosts() {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
+
+    // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
+    // --- renderPosts関数を以下に差し替えてください ---
 
 // --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
 function renderPosts(snap, targetEl) {
