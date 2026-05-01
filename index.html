@@ -231,26 +231,15 @@
     }
 
     // タブ切り替え（プロフィールカードの表示制御を追加）
-    // タブ切り替えの修正
-window.switchTab = (tab) => {
-    const isChat = tab === 'chat';
-    document.getElementById('main-view').classList.toggle('hidden', isChat);
-    document.getElementById('chat-view').classList.toggle('hidden', !isChat);
-    document.getElementById('profile-card').classList.toggle('hidden', isChat);
-    
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById(`nav-${tab}`).classList.add('active');
-
-    // --- 追加：掲示板に切り替えた時、強制的に再描画させる ---
-    if (isChat) {
-        // Firebaseから最新データを取得して再レンダリングを実行
-        const chatRef = query(ref(db, 'messages/room_0'), limitToLast(50));
-        get(chatRef).then(snap => {
-            renderPosts(snap, document.getElementById('all-posts-list'));
-        });
-    }
-};
-
+    window.switchTab = (tab) => {
+        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
+        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
+        // 掲示板（chat）の時はプロフィールカードを隠す指示
+        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
+        
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`nav-${tab}`).classList.add('active');
+    };
 
     window.switchSubTab = (sub) => {
         document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
@@ -277,40 +266,42 @@ window.switchTab = (tab) => {
     // 投稿レンダリング（アイコン左・コメント右の横並びに修正）
     // --- renderPosts関数を以下に差し替えてください ---
 
-// グラフのインスタンスを保持するオブジェクト（関数の外に配置）
-const chartInstances = {};
-
+// --- 1. レンダリング関数（古いデータでも止まらないようにガードを追加） ---
 function renderPosts(snap, targetEl) {
-    if (!targetEl) return;
     targetEl.innerHTML = "";
     const msgs = [];
     
+    // データを配列に変換
     snap.forEach(c => {
-        msgs.push({ key: c.key, ...c.val() });
+        const val = c.val();
+        msgs.push({ key: c.key, ...val });
     });
     
+    // 新しい順に並べる
     msgs.reverse().forEach(m => {
+        // データの安全性を確保（データが空でもエラーにしない）
         const nickname = m.nickname || "名無しさん";
         const text = m.text || "";
         const firstChar = nickname.charAt(0);
         const canvasId = `chart-post-${m.key}`;
         
+        // 日付の変換（timestampがない場合は現在時刻、または不明と表示）
         let timeStr = "不明";
         if (m.timestamp) {
             try {
                 timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
 
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; min-width: 45px; min-height: 45px; flex-shrink: 0;">
-                <canvas id="${canvasId}"></canvas>
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
+                <canvas id="${canvasId}" width="45" height="45"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                             font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
                             background: white; width: 22px; height: 22px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 5;">
+                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                     ${firstChar}
                 </div>
             </div>
@@ -324,78 +315,62 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // 次の描画サイクルでグラフを作成
-        setTimeout(() => {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
+        // グラフデータの復元（portfolioがない古いデータの場合は[1]を入れる）
+        let pData = m.portfolio;
+        if (!pData || !Array.isArray(pData) || pData.length === 0) {
+            // 旧コードのデータ形式（ac, sp, cash）をチェックして変換を試みる
+            const oldAc = parseInt(m.ac) || 0;
+            const oldSp = parseInt(m.sp) || 0;
+            const oldCash = parseInt(m.cash) || 0;
+            pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
+        }
 
-            // 重要：Canvasのサイズを明示的に指定
-            canvas.width = 45;
-            canvas.height = 45;
-
-            // 既存のグラフがあれば破棄
-            if (chartInstances[canvasId]) {
-                chartInstances[canvasId].destroy();
-                delete chartInstances[canvasId];
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: pData,
+                    backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                responsive: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                events: []
             }
-
-            let pData = m.portfolio;
-            if (!pData || !Array.isArray(pData) || pData.length === 0) {
-                pData = [1];
-            }
-
-            const ctx = canvas.getContext('2d');
-            chartInstances[canvasId] = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: pData,
-                        backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    cutout: '70%',
-                    responsive: false, // レスポンシブをOFFにしてサイズを固定
-                    maintainAspectRatio: true,
-                    animation: false,
-                    plugins: { 
-                        legend: { display: false }, 
-                        tooltip: { enabled: false } 
-                    }
-                }
-            });
-        }, 10); // わずかに待機
+        });
     });
 }
 
-
-
-// 送信ボタンのクリックイベント
+// --- 2. 送信ボタンの処理（確実にデータを送る形） ---
 document.getElementById('chat-send-btn').onclick = async () => {
     const input = document.getElementById('chat-input');
-    const msgText = input.value.trim();
-    
-    if(!msgText || !currentUser) return;
+    if(!input.value.trim() || !currentUser) return;
 
-    // 現在のポートフォリオを保存用の数値配列にする
+    // 現在のポートフォリオ値を数値配列にする
     const portfolioSnapshot = currentPortfolioList.length > 0 
-        ? currentPortfolioList.map(item => Number(item.val)) 
-        : [1];
+        ? currentPortfolioList.map(item => item.val) 
+        : [];
 
     try {
-        // push を使って新しいノードとして追加（既存の投稿は消えません）
         await push(ref(db, 'messages/room_0'), {
             uid: currentUser.uid, 
             nickname: currentData.nickname || currentUser.displayName || "名無し", 
-            text: msgText, 
+            text: input.value, 
             timestamp: serverTimestamp(),
-            portfolio: portfolioSnapshot
+            portfolio: portfolioSnapshot,
+            // 互換性のために古い形式も少し残しておく
+            ac: currentData.ac || 0,
+            sp: currentData.sp || 0,
+            cash: currentData.cash || 0
         });
-        input.value = ""; // 入力欄をクリア
+        input.value = "";
     } catch (e) {
         console.error("送信エラー:", e);
-        alert("投稿に失敗しました。");
+        alert("送信に失敗しました。ルールの公開を確認してください。");
     }
 };
 
