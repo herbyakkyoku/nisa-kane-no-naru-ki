@@ -294,12 +294,12 @@ function renderPosts(snap, targetEl) {
         const div = document.createElement('div');
         div.className = 'msg-card';
         div.innerHTML = `
-            <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;">
-                <canvas id="${canvasId}" width="45" height="45"></canvas>
+            <div class="msg-left" style="position: relative; width: 45px; height: 45px; min-width: 45px; min-height: 45px; flex-shrink: 0;">
+                <canvas id="${canvasId}"></canvas>
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                             font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
                             background: white; width: 22px; height: 22px; border-radius: 50%;
-                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                            display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 5;">
                     ${firstChar}
                 </div>
             </div>
@@ -313,15 +313,19 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // --- 描画タイミングの修正 ---
-        // setTimeout を使って、ブラウザが HTML を認識した後にグラフを描画する
+        // 次の描画サイクルでグラフを作成
         setTimeout(() => {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
 
-            // 既存のインスタンスがあれば破棄
+            // 重要：Canvasのサイズを明示的に指定
+            canvas.width = 45;
+            canvas.height = 45;
+
+            // 既存のグラフがあれば破棄
             if (chartInstances[canvasId]) {
                 chartInstances[canvasId].destroy();
+                delete chartInstances[canvasId];
             }
 
             let pData = m.portfolio;
@@ -341,16 +345,19 @@ function renderPosts(snap, targetEl) {
                 },
                 options: {
                     cutout: '70%',
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    animation: false, // 描画を速くするためにアニメーションをオフ
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    events: []
+                    responsive: false, // レスポンシブをOFFにしてサイズを固定
+                    maintainAspectRatio: true,
+                    animation: false,
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { enabled: false } 
+                    }
                 }
             });
-        }, 0); // 0秒指定でも、処理をキューに後回しにする効果があります
+        }, 10); // わずかに待機
     });
 }
+
 
 
 // 送信ボタンのクリックイベント
