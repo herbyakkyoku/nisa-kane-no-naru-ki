@@ -278,7 +278,6 @@ function renderPosts(snap, targetEl) {
         msgs.push({ key: c.key, ...c.val() });
     });
     
-    // 最新順に表示
     msgs.reverse().forEach(m => {
         const nickname = m.nickname || "名無しさん";
         const text = m.text || "";
@@ -314,20 +313,22 @@ function renderPosts(snap, targetEl) {
         `;
         targetEl.appendChild(div);
 
-        // --- グラフ描画ロジック ---
-        // 既存のインスタンスがあれば破棄（エラー防止のため optional chaining ?. を使用）
-        if (chartInstances[canvasId]) {
-            chartInstances[canvasId].destroy();
-        }
+        // --- 描画タイミングの修正 ---
+        // setTimeout を使って、ブラウザが HTML を認識した後にグラフを描画する
+        setTimeout(() => {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
 
-        let pData = m.portfolio;
-        // データがない、あるいは不正な場合のフォールバック
-        if (!pData || !Array.isArray(pData) || pData.length === 0) {
-            pData = [1]; // グレーの円を表示
-        }
+            // 既存のインスタンスがあれば破棄
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
 
-        const canvas = document.getElementById(canvasId);
-        if (canvas) {
+            let pData = m.portfolio;
+            if (!pData || !Array.isArray(pData) || pData.length === 0) {
+                pData = [1];
+            }
+
             const ctx = canvas.getContext('2d');
             chartInstances[canvasId] = new Chart(ctx, {
                 type: 'doughnut',
@@ -342,13 +343,15 @@ function renderPosts(snap, targetEl) {
                     cutout: '70%',
                     responsive: false,
                     maintainAspectRatio: false,
+                    animation: false, // 描画を速くするためにアニメーションをオフ
                     plugins: { legend: { display: false }, tooltip: { enabled: false } },
                     events: []
                 }
             });
-        }
+        }, 0); // 0秒指定でも、処理をキューに後回しにする効果があります
     });
 }
+
 
 // 送信ボタンのクリックイベント
 document.getElementById('chat-send-btn').onclick = async () => {
