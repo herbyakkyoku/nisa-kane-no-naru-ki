@@ -299,7 +299,14 @@
             div.innerHTML = `
                 <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
                     <canvas id="${canvasId}" width="45" height="45"></canvas>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.7rem; font-weight: bold; color: #555; background: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${nickname.charAt(0)}</div>
+                    // background: white; を background: ${m.iconColor || 'white'}; に変更
+<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+     font-size: 0.7rem; font-weight: bold; color: #555; background: ${m.iconColor || 'white'}; 
+     width: 22px; height: 22px; border-radius: 50%; display: flex; 
+     align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+     ${nickname.charAt(0)}
+</div>
+
                 </div>
                 <div class="msg-right">
                     <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
@@ -323,7 +330,9 @@
             await push(ref(db, 'messages/room_0'), {
                 uid: currentUser.uid, 
                 nickname: currentUser.displayName, 
-                text: input.value, 
+iconColor: currentData.iconColor || 'white', 
+text: input.value, 
+
                 timestamp: serverTimestamp(),
                 portfolio: currentPortfolioList.map(item => item.val),
                 fullPortfolioList: currentPortfolioList,
