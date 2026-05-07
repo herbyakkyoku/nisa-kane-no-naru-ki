@@ -37,26 +37,15 @@
 
         /* --- 掲示板レイアウト --- */
         .post-container { padding: 10px 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg-card { background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-        .msg-main { display: flex; align-items: flex-start; }
+        .msg-card { display: flex; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; align-items: flex-start; }
+        
         .msg-left { flex-shrink: 0; margin-right: 12px; cursor: pointer; }
+        
         .msg-right { flex: 1; display: flex; flex-direction: column; }
         .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .msg-user { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
         .msg-date { font-size: 0.65rem; color: #cbd5e1; }
-        .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.5; word-break: break-all; margin-bottom: 8px; }
-
-        /* アクションボタン */
-        .msg-actions { display: flex; gap: 15px; margin-top: 5px; border-top: 1px solid #f8fafc; padding-top: 8px; }
-        .action-btn { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: #64748b; cursor: pointer; background: none; border: none; padding: 0; }
-        .action-btn.active { color: #e74c3c; font-weight: bold; }
-        .action-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
-        .action-btn.active .action-icon { fill: #e74c3c; stroke: #e74c3c; }
-
-        /* 返信セクション */
-        .replies-list { margin-top: 8px; padding-left: 10px; border-left: 2px solid #f1f5f9; }
-        .reply-item { font-size: 0.75rem; margin-bottom: 4px; color: #475569; }
-        .reply-user { font-weight: bold; color: var(--primary); margin-right: 5px; }
+        .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.5; word-break: break-all; }
 
         /* 掲示板入力エリア */
         .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 80; }
@@ -174,7 +163,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, update, onValue, push, serverTimestamp, query, orderByChild, equalTo, limitToLast, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue, push, serverTimestamp, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
@@ -194,9 +183,6 @@
     let currentData = {};
     let currentPortfolioList = [];
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
-    
-    // 掲示板用のグラフインスタンス管理用
-    let postCharts = {};
 
     onAuthStateChanged(auth, user => {
         if(user) {
@@ -232,7 +218,6 @@
         document.getElementById('val-total').innerText = isHidden ? "¥********" : `¥${total.toLocaleString()}`;
         document.getElementById('val-profit').innerText = isHidden ? "¥********" : `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
         document.getElementById('val-count').innerText = `${list.length} 銘柄`;
-        document.getElementById('val-likes').innerText = data.receivedLikes || 0;
 
         if (myChart) myChart.destroy();
         myChart = new Chart(document.getElementById('myChart').getContext('2d'), {
@@ -262,153 +247,18 @@
     async function loadMyPosts(mode) {
         const listEl = document.getElementById('my-posts-list');
         listEl.innerHTML = "読込中...";
-        
-        const dbRef = ref(db, 'messages/room_0');
-        let q;
-        
         if(mode === 'likes') {
-            const allSnap = await get(query(dbRef, limitToLast(100)));
-            const likedPosts = [];
-            allSnap.forEach(snap => {
-                const post = snap.val();
-                if(post.likes && post.likes[currentUser.uid]) likedPosts.push({ key: snap.key, ...post });
-            });
-            renderPosts(likedPosts, listEl, true);
-        } else {
-            q = query(dbRef, orderByChild('uid'), equalTo(currentUser.uid));
-            const snap = await get(q);
-            const msgs = [];
-            snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-            renderPosts(msgs, listEl, true);
+            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
+            return;
         }
+        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
+        const snap = await get(q);
+        renderPosts(snap, listEl);
     }
 
     function loadAllPosts() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
-            const msgs = [];
-            snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-            // 【修正箇所】第3引数に true を追加
-            renderPosts(msgs, document.getElementById('all-posts-list'), true); 
-        });
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
-
-    window.toggleLike = async (postKey, authorUid) => {
-        if(!currentUser) return;
-        const postRef = ref(db, `messages/room_0/${postKey}`);
-        const userRef = ref(db, `users/${authorUid}`);
-
-        await runTransaction(postRef, (post) => {
-            if (post) {
-                if (!post.likes) post.likes = {};
-                if (post.likes[currentUser.uid]) {
-                    delete post.likes[currentUser.uid];
-                    post.likeCount = (post.likeCount || 1) - 1;
-                } else {
-                    post.likes[currentUser.uid] = true;
-                    post.likeCount = (post.likeCount || 0) + 1;
-                }
-            }
-            return post;
-        });
-
-        const authorSnap = await get(postRef);
-        const newCount = authorSnap.val().likeCount || 0;
-        await update(userRef, { receivedLikes: newCount });
-    };
-
-    window.sendReply = async (postKey) => {
-        const text = prompt("返信を入力してください");
-        if(!text || !currentUser) return;
-        const replyRef = ref(db, `messages/room_0/${postKey}/replies`);
-        await push(replyRef, {
-            uid: currentUser.uid,
-            nickname: currentUser.displayName,
-            text: text,
-            timestamp: serverTimestamp()
-        });
-    };
-
-    window.shareToX = (text) => {
-        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + "\n#みんなのNISA")}`;
-        window.open(url, '_blank');
-    };
-
-    function renderPosts(msgs, targetEl, isArray = false) {
-    targetEl.innerHTML = "";
-    const data = isArray ? msgs : Object.values(msgs); 
-    data.sort((a, b) => b.timestamp - a.timestamp);
-
-    // 1. まずはHTML（カード）をすべて作成して追加する
-    data.forEach(m => {
-        const nickname = m.nickname || "名無しさん";
-        const canvasId = `chart-post-${m.key}`;
-        const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
-        const isLiked = m.likes && m.likes[currentUser.uid];
-        const likeCount = m.likeCount || 0;
-        
-        const div = document.createElement('div');
-        div.className = 'msg-card';
-        div.innerHTML = `
-            <div class="msg-main">
-                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
-                    <canvas id="${canvasId}" width="45" height="45"></canvas>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: #eee; pointer-events: none;">
-                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'; this.parentElement.innerText='${nickname.charAt(0)}';">
-                    </div>
-                </div>
-                <div class="msg-right">
-                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
-                    <div class="msg-text">${m.text || ""}</div>
-                    <div class="msg-actions">
-                        </div>
-                    <div id="replies-${m.key}" class="replies-list"></div>
-                </div>
-            </div>`;
-        targetEl.appendChild(div);
-
-        // 返信の描画処理もここで行う
-        if(m.replies) {
-            const replyBox = div.querySelector(`#replies-${m.key}`);
-            Object.values(m.replies).forEach(r => {
-                const rDiv = document.createElement('div');
-                rDiv.className = 'reply-item';
-                rDiv.innerHTML = `<span class="reply-user">${r.nickname}</span> ${r.text}`;
-                replyBox.appendChild(rDiv);
-            });
-        }
-    });
-
-    // 2. すべてのHTMLがDOMに追加された後で、グラフを一つずつ描画する
-    data.forEach(m => {
-        const canvasId = `chart-post-${m.key}`;
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-
-        // 既存のグラフがあれば破棄（これが重要！）
-        if (postCharts[canvasId]) {
-            postCharts[canvasId].destroy();
-        }
-
-        let pData = m.portfolio || [1];
-        postCharts[canvasId] = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
-            data: { 
-                datasets: [{ 
-                    data: pData, 
-                    backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, 
-                    borderWidth: 0 
-                }] 
-            },
-            options: { 
-                cutout: '70%', 
-                responsive: false, 
-                plugins: { legend: { display: false }, tooltip: { enabled: false } }, 
-                events: [] 
-            }
-        });
-    });
-}
-
 
     window.showPostDetails = (mKey) => {
         const listEl = document.getElementById('detail-list');
@@ -435,6 +285,39 @@
         });
     };
 
+    function renderPosts(snap, targetEl) {
+        targetEl.innerHTML = "";
+        const msgs = [];
+        snap.forEach(c => { msgs.push({ key: c.key, ...c.val() }); });
+        msgs.reverse().forEach(m => {
+            const nickname = m.nickname || "名無しさん";
+            const canvasId = `chart-post-${m.key}`;
+            const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
+            
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
+                    <canvas id="${canvasId}" width="45" height="45"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: #eee; pointer-events: none;">
+                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'; this.parentElement.innerText='${nickname.charAt(0)}';">
+                    </div>
+                </div>
+                <div class="msg-right">
+                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
+                    <div class="msg-text">${m.text || ""}</div>
+                </div>`;
+            targetEl.appendChild(div);
+
+            let pData = m.portfolio || [1];
+            new Chart(document.getElementById(canvasId).getContext('2d'), {
+                type: 'doughnut',
+                data: { datasets: [{ data: pData, backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, borderWidth: 0 }] },
+                options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
+            });
+        });
+    }
+
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
         if(!input.value.trim() || !currentUser) return;
@@ -448,7 +331,8 @@
                 portfolio: currentPortfolioList.map(item => item.val),
                 fullPortfolioList: currentPortfolioList,
                 hideAmount: currentData.hideAmount || false,
-                likeCount: 0
+                ac: currentData.ac || 0,
+                sp: currentData.sp || 0
             });
             input.value = "";
         } catch (e) { console.error("送信エラー:", e); }
