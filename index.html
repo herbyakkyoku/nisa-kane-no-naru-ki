@@ -194,6 +194,9 @@
     let currentData = {};
     let currentPortfolioList = [];
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
+    
+    // 掲示板用のグラフインスタンス管理用
+    let postCharts = {};
 
     onAuthStateChanged(auth, user => {
         if(user) {
@@ -264,7 +267,6 @@
         let q;
         
         if(mode === 'likes') {
-            // いいねした投稿をフィルタリング
             const allSnap = await get(query(dbRef, limitToLast(100)));
             const likedPosts = [];
             allSnap.forEach(snap => {
@@ -282,16 +284,14 @@
     }
 
     function loadAllPosts() {
-    onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
-        const msgs = [];
-        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-        // 第3引数に true を追加して、msgsが配列であることを伝えます
-        renderPosts(msgs, document.getElementById('all-posts-list'), true); 
-    });
-}
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
+            const msgs = [];
+            snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
+            // 【修正箇所】第3引数に true を追加
+            renderPosts(msgs, document.getElementById('all-posts-list'), true); 
+        });
+    }
 
-
-    // いいねトグル機能
     window.toggleLike = async (postKey, authorUid) => {
         if(!currentUser) return;
         const postRef = ref(db, `messages/room_0/${postKey}`);
@@ -311,13 +311,11 @@
             return post;
         });
 
-        // 投稿者の総いいね数を更新
         const authorSnap = await get(postRef);
         const newCount = authorSnap.val().likeCount || 0;
         await update(userRef, { receivedLikes: newCount });
     };
 
-    // 返信機能
     window.sendReply = async (postKey) => {
         const text = prompt("返信を入力してください");
         if(!text || !currentUser) return;
@@ -330,7 +328,6 @@
         });
     };
 
-    // Xシェア機能
     window.shareToX = (text) => {
         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + "\n#みんなのNISA")}`;
         window.open(url, '_blank');
@@ -380,7 +377,6 @@
                 </div>`;
             targetEl.appendChild(div);
 
-            // 返信のレンダリング
             if(m.replies) {
                 const replyBox = div.querySelector(`#replies-${m.key}`);
                 Object.values(m.replies).forEach(r => {
@@ -391,8 +387,12 @@
                 });
             }
 
+            // 【修正箇所】グラフの破棄と再描画の処理
+            if (postCharts[canvasId]) {
+                postCharts[canvasId].destroy();
+            }
             let pData = m.portfolio || [1];
-            new Chart(document.getElementById(canvasId).getContext('2d'), {
+            postCharts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'doughnut',
                 data: { datasets: [{ data: pData, backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, borderWidth: 0 }] },
                 options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
