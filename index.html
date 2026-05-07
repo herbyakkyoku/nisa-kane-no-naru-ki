@@ -95,7 +95,8 @@
                     </div>
                 </div>
                 <div class="dashboard-right">
-                    <div id="display-bio" class="bio-text"></div>
+    <div id="display-name" style="font-weight:bold; color:var(--primary); margin-bottom:5px;"></div>
+    <div id="display-bio" class="bio-text"></div>
                     <div class="stats-grid">
                         <div class="stat-box"><span class="stat-label">①利益額</span><div id="val-profit" class="stat-value"></div></div>
                         <div class="stat-box"><span class="stat-label">②銘柄数</span><div id="val-count" class="stat-value"></div></div>
@@ -151,7 +152,6 @@
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin:0 0 15px 0;">プロフィール設定</h3>
         <label class="checkbox-item"><input type="checkbox" id="set-hide-amount"> 資産額を伏せ字にする</label>
-        <div class="input-item"><label>ニックネーム</label><input type="text" id="set-nickname"></div>
         <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="2"></textarea></div>
         <div class="input-item"><label>利益額 (万円)</label><input type="number" id="set-target-profit"></div>
         <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
@@ -186,193 +186,27 @@
     let currentPortfolioList = [];
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
 
-    onAuthStateChanged(auth, user => {
+        onAuthStateChanged(auth, user => {
         if(user) {
             currentUser = user;
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('authenticated-content').classList.remove('hidden');
             document.getElementById('global-nav').classList.remove('hidden');
             document.getElementById('chart-avatar').src = user.photoURL;
+            
+            // --- ここをスッキリさせます ---
+            // HTMLにあらかじめ ID="display-name" を作ったので、代入するだけでOKです
+            document.getElementById('display-name').innerText = user.displayName;
+            // ------------------------------
+
             onValue(ref(db, `users/${user.uid}`), snap => updateMyUI(snap.val() || {}));
             loadAllPosts();
             loadMyPosts('mine');
         }
     });
 
-    function updateMyUI(data) {
-        currentData = data;
-        const isHidden = data.hideAmount === true;
-        const ac = (parseInt(data.ac) || 0) * 10000;
-        const sp = (parseInt(data.sp) || 0) * 10000;
-        const stocks = data.stocks || [];
-        
-        let list = [];
-        if (ac > 0) list.push({ name: '全世界', val: ac, color: '#2ecc71' });
-        if (sp > 0) list.push({ name: 'S&P500', val: sp, color: '#f39c12' });
-        stocks.forEach((s, i) => list.push({ name: s.name, val: (parseInt(s.val) || 0) * 10000, color: stockColors[(i + 2) % stockColors.length] }));
-        list.sort((a, b) => b.val - a.val);
-        currentPortfolioList = list;
 
-        const total = list.reduce((s, i) => s + i.val, 0);
-        document.getElementById('display-bio').innerText = data.bio || "自己紹介を設定してみましょう";
-        document.getElementById('val-total').innerText = isHidden ? "¥********" : `¥${total.toLocaleString()}`;
-        document.getElementById('val-profit').innerText = isHidden ? "¥********" : `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
-        document.getElementById('val-count').innerText = `${list.length} 銘柄`;
-
-        if (myChart) myChart.destroy();
-        myChart = new Chart(document.getElementById('myChart').getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: list.map(i => i.name),
-                datasets: [{ data: list.map(i => i.val), backgroundColor: list.map(i => i.color), borderWidth: 0 }]
-            },
-            options: { 
-    cutout: '75%', 
-    plugins: { 
-        legend: { display: false },
-        tooltip: { enabled: false } // ここを追加してツールチップを無効化
-    } 
-}
-        });
-    }
-
-    window.switchTab = (tab) => {
-        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
-        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
-        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`nav-${tab}`).classList.add('active');
-    };
-
-    window.switchSubTab = (sub) => {
-        document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
-        document.getElementById(`sub-tab-${sub}`).classList.add('active');
-        loadMyPosts(sub);
-    };
-
-    async function loadMyPosts(mode) {
-        const listEl = document.getElementById('my-posts-list');
-        listEl.innerHTML = "読込中...";
-        if(mode === 'likes') {
-            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
-            return;
-        }
-        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
-        const snap = await get(q);
-        renderPosts(snap, listEl);
-    }
-
-    function loadAllPosts() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
-    }
-
-    // アイコンクリック時の処理
-    window.showPostDetails = (mKey) => {
-        const listEl = document.getElementById('detail-list');
-        listEl.innerHTML = "";
-        
-        get(ref(db, `messages/room_0/${mKey}`)).then(snap => {
-            const m = snap.val();
-            if(!m) return;
-
-            const isHidden = m.hideAmount === true;
-            const fullList = m.fullPortfolioList || [];
-            
-            // 全合計額を算出（％計算用）
-            const totalVal = fullList.reduce((sum, item) => sum + item.val, 0);
-
-            if(fullList.length === 0) {
-                listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem;">内訳データがありません</p>';
-            } else {
-                fullList.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'detail-item';
-                    
-                    // 割合を計算
-                    const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
-                    
-                    // 伏せ字設定がONなら金額だけ隠し、銘柄名と％を表示する
-                    const valDisplay = isHidden ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
-                    
-                    li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valDisplay}</strong>`;
-                    listEl.appendChild(li);
-                });
-            }
-            document.getElementById('detail-modal').style.display = 'block';
-        });
-    };
-
-    function renderPosts(snap, targetEl) {
-        targetEl.innerHTML = "";
-        const msgs = [];
-        snap.forEach(c => {
-            const val = c.val();
-            msgs.push({ key: c.key, ...val });
-        });
-        
-        msgs.reverse().forEach(m => {
-            const nickname = m.nickname || "名無しさん";
-            const text = m.text || "";
-            const firstChar = nickname.charAt(0);
-            const canvasId = `chart-post-${m.key}`;
-            
-            let timeStr = "不明";
-            if (m.timestamp) {
-                try {
-                    timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                } catch(e) { console.error(e); }
-            }
-
-            const div = document.createElement('div');
-            div.className = 'msg-card';
-            div.innerHTML = `
-                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
-                    <canvas id="${canvasId}" width="45" height="45"></canvas>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                                font-size: 0.7rem; font-weight: bold; color: #555; pointer-events: none;
-                                background: white; width: 22px; height: 22px; border-radius: 50%;
-                                display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-                        ${firstChar}
-                    </div>
-                </div>
-                <div class="msg-right">
-                    <div class="msg-header">
-                        <span class="msg-user">${nickname}</span>
-                        <span class="msg-date">${timeStr}</span>
-                    </div>
-                    <div class="msg-text">${text}</div>
-                </div>
-            `;
-            targetEl.appendChild(div);
-
-            let pData = m.portfolio;
-            if (!pData || !Array.isArray(pData) || pData.length === 0) {
-                const oldAc = parseInt(m.ac) || 0;
-                const oldSp = parseInt(m.sp) || 0;
-                const oldCash = parseInt(m.cash) || 0;
-                pData = (oldAc + oldSp + oldCash > 0) ? [oldAc, oldSp, oldCash] : [1];
-            }
-
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: pData,
-                        backgroundColor: (pData.length === 1 && pData[0] === 1) ? ['#eee'] : stockColors,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    cutout: '70%',
-                    responsive: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    events: []
-                }
-            });
-        });
-    }
-
+    // 3. 掲示板投稿時にGoogleアカウント名を使用
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
         if(!input.value.trim() || !currentUser) return;
@@ -382,7 +216,7 @@
         try {
             await push(ref(db, 'messages/room_0'), {
                 uid: currentUser.uid, 
-                nickname: currentData.nickname || currentUser.displayName || "名無し", 
+                nickname: currentUser.displayName, // ここを固定
                 text: input.value, 
                 timestamp: serverTimestamp(),
                 portfolio: portfolioValues,
@@ -397,9 +231,10 @@
         }
     };
 
+    // 4. 設定表示からニックネームを除外
     window.showSettings = () => {
         const d = currentData;
-        document.getElementById('set-nickname').value = d.nickname || currentUser.displayName || "";
+        // set-nickname への代入を削除
         document.getElementById('set-bio').value = d.bio || "";
         document.getElementById('set-target-profit').value = d.targetProfit || 0;
         document.getElementById('set-ac').value = d.ac || 0;
@@ -412,15 +247,7 @@
         document.getElementById('settings-modal').style.display = 'block';
     };
 
-    window.addStockRow = (name = "", val = "") => {
-        const div = document.createElement('div');
-        div.className = 'stock-row';
-        div.innerHTML = `<input type="text" placeholder="銘柄名" value="${name}" style="flex:2">
-                         <input type="number" placeholder="万円" value="${val}" style="flex:1">
-                         <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; font-size:1.2rem;">×</button>`;
-        document.getElementById('stock-list-container').appendChild(div);
-    };
-
+    // 5. 保存処理からニックネームを除外
     window.saveSettings = async () => {
         const stocks = [];
         document.querySelectorAll('.stock-row').forEach(row => {
@@ -428,7 +255,7 @@
             if(inputs[0].value) stocks.push({ name: inputs[0].value, val: inputs[1].value });
         });
         await update(ref(db, `users/${currentUser.uid}`), {
-            nickname: document.getElementById('set-nickname').value,
+            // nickname の更新を削除
             bio: document.getElementById('set-bio').value,
             targetProfit: document.getElementById('set-target-profit').value,
             ac: document.getElementById('set-ac').value,
@@ -438,29 +265,6 @@
         });
         hideSettings();
     };
-
-    window.showDetails = () => {
-        const listEl = document.getElementById('detail-list');
-        listEl.innerHTML = "";
-        
-        const totalVal = currentPortfolioList.reduce((sum, item) => sum + item.val, 0);
-
-        currentPortfolioList.forEach(item => {
-            const li = document.createElement('li');
-            li.className = 'detail-item';
-            
-            const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
-            const valStr = currentData.hideAmount ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
-            
-            li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valStr}</strong>`;
-            listEl.appendChild(li);
-        });
-        document.getElementById('detail-modal').style.display = 'block';
-    };
-
-    window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
-    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
-    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
 </html>
