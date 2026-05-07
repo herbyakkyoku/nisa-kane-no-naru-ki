@@ -282,12 +282,14 @@
     }
 
     function loadAllPosts() {
-        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
-            const msgs = [];
-            snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-            renderPosts(msgs, document.getElementById('all-posts-list'));
-        });
-    }
+    onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
+        const msgs = [];
+        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
+        // 第3引数に true を追加して、msgsが配列であることを伝えます
+        renderPosts(msgs, document.getElementById('all-posts-list'), true); 
+    });
+}
+
 
     // いいねトグル機能
     window.toggleLike = async (postKey, authorUid) => {
