@@ -182,8 +182,6 @@
     let myChart = null;
     let currentData = {};
     let currentPortfolioList = [];
-    // 【追加】掲示板内のグラフインスタンスを管理するためのオブジェクト
-    let postCharts = {}; 
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
 
     onAuthStateChanged(auth, user => {
@@ -221,6 +219,7 @@
         document.getElementById('val-profit').innerText = isHidden ? "¥********" : `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
         document.getElementById('val-count').innerText = `${list.length} 銘柄`;
 
+        // メインチャートの重複防止
         if (myChart) myChart.destroy();
         myChart = new Chart(document.getElementById('myChart').getContext('2d'), {
             type: 'doughnut',
@@ -232,6 +231,61 @@
         });
     }
 
+    // ★重要: 掲示板描画関数（Canvas reuseエラー完全対応版）
+    function renderPosts(snap, targetEl) {
+        targetEl.innerHTML = "";
+        const msgs = [];
+        snap.forEach(c => { msgs.push({ key: c.key, ...c.val() }); });
+        msgs.reverse().forEach(m => {
+            const nickname = m.nickname || "名無しさん";
+            const canvasId = `chart-post-${m.key}`;
+            const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
+            
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
+                    <canvas id="${canvasId}" width="45" height="45"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: #eee; pointer-events: none;">
+                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'; this.parentElement.innerText='${nickname.charAt(0)}';">
+                    </div>
+                </div>
+                <div class="msg-right">
+                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
+                    <div class="msg-text">${m.text || ""}</div>
+                </div>`;
+            targetEl.appendChild(div);
+
+            // 【核心部分】既存のグラフインスタンスを検索して破棄
+            const existingChart = Chart.getChart(canvasId); 
+            if (existingChart) {
+                existingChart.destroy();
+            }
+
+            const pData = m.portfolio || [1];
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: { 
+                    datasets: [{ 
+                        data: pData, 
+                        backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, 
+                        borderWidth: 0 
+                    }] 
+                },
+                options: { 
+                    cutout: '70%', 
+                    responsive: false, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }, 
+                    events: [] 
+                }
+            });
+        });
+    }
+
+    // 以下の関数群は変更なしですが、動作に必要なので含めています
     window.switchTab = (tab) => {
         document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
@@ -287,46 +341,6 @@
         });
     };
 
-    // 【書き換え】グラフのメモリリークと「Canvas reuse」エラーを防止したレンダリング関数
-    function renderPosts(snap, targetEl) {
-        targetEl.innerHTML = "";
-        const msgs = [];
-        snap.forEach(c => { msgs.push({ key: c.key, ...c.val() }); });
-        msgs.reverse().forEach(m => {
-            const nickname = m.nickname || "名無しさん";
-            const canvasId = `chart-post-${m.key}`;
-            const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
-            
-            const div = document.createElement('div');
-            div.className = 'msg-card';
-            div.innerHTML = `
-                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
-                    <canvas id="${canvasId}" width="45" height="45"></canvas>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: #eee; pointer-events: none;">
-                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'; this.parentElement.innerText='${nickname.charAt(0)}';">
-                    </div>
-                </div>
-                <div class="msg-right">
-                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
-                    <div class="msg-text">${m.text || ""}</div>
-                </div>`;
-            targetEl.appendChild(div);
-
-            // 前回の同じ投稿IDのグラフが残っていれば破棄する
-            if (postCharts[canvasId]) {
-                postCharts[canvasId].destroy();
-            }
-
-            let pData = m.portfolio || [1];
-            // 新しいグラフを作成し、postChartsに保存しておく
-            postCharts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
-                type: 'doughnut',
-                data: { datasets: [{ data: pData, backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, borderWidth: 0 }] },
-                options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
-            });
-        });
-    }
-
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
         if(!input.value.trim() || !currentUser) return;
@@ -339,9 +353,7 @@
                 timestamp: serverTimestamp(),
                 portfolio: currentPortfolioList.map(item => item.val),
                 fullPortfolioList: currentPortfolioList,
-                hideAmount: currentData.hideAmount || false,
-                ac: currentData.ac || 0,
-                sp: currentData.sp || 0
+                hideAmount: currentData.hideAmount || false
             });
             input.value = "";
         } catch (e) { console.error("送信エラー:", e); }
