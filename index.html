@@ -720,28 +720,55 @@ function loadAllPosts() {
 }
 
 // =====================================================
-// 投稿レンダリング
-// Chart.js インスタンスをレジストリで管理し、
-// 再描画のたびに古いインスタンスを必ず destroy する
+// ミニドーナツチャートをSVGで描画（Chart.js不使用）
+// Canvas/Chart.jsのライフサイクル問題を完全に回避
 // =====================================================
+function buildDonutSVG(values, colors, size) {
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 1;
+    const innerR = outerR * 0.65;
+    const total  = values.reduce((s, v) => s + (v || 0), 0);
 
-// key = canvasId, value = Chart instance
-const postChartRegistry = {};
+    if (!total) {
+        // データなし：灰色の円
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="#e2e8f0"/>
+            <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="white"/>
+        </svg>`;
+    }
 
-function destroyPostCharts(targetEl) {
-    // targetEl 内にある canvas を全て探して destroy
-    targetEl.querySelectorAll('canvas[id^="chart-post-"]').forEach(canvas => {
-        const id = canvas.id;
-        if (postChartRegistry[id]) {
-            postChartRegistry[id].destroy();
-            delete postChartRegistry[id];
-        }
+    let paths = '';
+    let startAngle = -Math.PI / 2; // 12時スタート
+
+    values.forEach((v, i) => {
+        if (!v) return;
+        const slice = (v / total) * 2 * Math.PI;
+        const endAngle = startAngle + slice;
+
+        const x1 = cx + outerR * Math.cos(startAngle);
+        const y1 = cy + outerR * Math.sin(startAngle);
+        const x2 = cx + outerR * Math.cos(endAngle);
+        const y2 = cy + outerR * Math.sin(endAngle);
+        const ix1 = cx + innerR * Math.cos(endAngle);
+        const iy1 = cy + innerR * Math.sin(endAngle);
+        const ix2 = cx + innerR * Math.cos(startAngle);
+        const iy2 = cy + innerR * Math.sin(startAngle);
+        const large = slice > Math.PI ? 1 : 0;
+        const color = colors[i % colors.length];
+
+        paths += `<path d="M${x1},${y1} A${outerR},${outerR} 0 ${large},1 ${x2},${y2}
+            L${ix1},${iy1} A${innerR},${innerR} 0 ${large},0 ${ix2},${iy2} Z"
+            fill="${color}"/>`;
+        startAngle = endAngle;
     });
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
 }
 
+// =====================================================
+// 投稿レンダリング（SVGアイコン版・Chart.js不使用）
+// =====================================================
 function renderPosts(msgs, targetEl) {
-    // 既存の Chart を全て破棄してから innerHTML をクリア
-    destroyPostCharts(targetEl);
     targetEl.innerHTML = '';
 
     const data = [...msgs].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -757,23 +784,37 @@ function renderPosts(msgs, targetEl) {
 
     data.forEach(m => {
         const nickname  = m.nickname || '名無しさん';
-        // key に使えない文字を除去して安全な ID を生成
-        const safeKey   = (m.key || '').replace(/[^a-zA-Z0-9_-]/g, '');
-        const canvasId  = `chart-post-${safeKey}`;
         const timeStr   = m.timestamp
             ? new Date(m.timestamp).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
             : '';
         const isLiked   = m.likes && currentUser && m.likes[currentUser.uid];
         const likeCount = m.likeCount || 0;
 
-        // 返信リストの生成
+        // ポートフォリオ SVG ドーナツ
+        const pVals   = (m.portfolio && m.portfolio.length) ? m.portfolio : [1];
+        const pColors = (m.portfolio && m.portfolio.length) ? STOCK_COLORS : ['#e2e8f0'];
+        const donutSVG = buildDonutSVG(pVals, pColors, 48);
+
+        // アバター（イニシャルフォールバック付き）
+        const initial = escHtml(nickname.charAt(0));
+        const avatarHTML = m.userPhoto
+            ? `<img src="${m.userPhoto}" referrerpolicy="no-referrer"
+                   style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                          width:24px;height:24px;border-radius:50%;object-fit:cover;border:1.5px solid white;"
+                   onerror="this.outerHTML='<div style=\\'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:#94a3b8;color:white;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;\\'>${initial}</div>'">`
+            : `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                           width:24px;height:24px;border-radius:50%;background:#94a3b8;
+                           color:white;font-size:10px;font-weight:bold;
+                           display:flex;align-items:center;justify-content:center;">${initial}</div>`;
+
+        // 返信リスト
         let repliesHTML = '';
         if (m.replies) {
             const replyVals = Object.values(m.replies)
                 .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             const shown = replyVals.slice(-3);
             if (replyVals.length > 3) {
-                repliesHTML += `<div class="reply-item" style="color:#94a3b8;">...他 ${replyVals.length - 3} 件の返信</div>`;
+                repliesHTML += `<div class="reply-item" style="color:#94a3b8;">他 ${replyVals.length - 3} 件の返信</div>`;
             }
             repliesHTML += shown.map(r =>
                 `<div class="reply-item"><span class="reply-user">${escHtml(r.nickname || '名無しさん')}</span>${escHtml(r.text)}</div>`
@@ -782,17 +823,13 @@ function renderPosts(msgs, targetEl) {
 
         const div = document.createElement('div');
         div.className = 'msg-card';
-        div.dataset.postKey = m.key;
 
         div.innerHTML = `
             <div class="msg-main">
-                <div class="msg-left" style="position:relative; width:48px; height:48px; flex-shrink:0;" onclick="showPostDetails('${m.key}')">
-                    <canvas id="${canvasId}" width="48" height="48" style="display:block;"></canvas>
-                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:24px; height:24px; border-radius:50%; overflow:hidden; background:#e2e8f0; pointer-events:none;">
-                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer"
-                            style="width:100%; height:100%; object-fit:cover; display:block;"
-                            onerror="this.style.display='none'; this.parentElement.innerText='${escHtml(nickname.charAt(0))}';">
-                    </div>
+                <div class="msg-left" style="position:relative;width:48px;height:48px;flex-shrink:0;cursor:pointer;"
+                     onclick="showPostDetails('${m.key}')">
+                    ${donutSVG}
+                    ${avatarHTML}
                 </div>
                 <div class="msg-right">
                     <div class="msg-header">
@@ -819,25 +856,6 @@ function renderPosts(msgs, targetEl) {
             </div>`;
 
         targetEl.appendChild(div);
-
-        // ミニドーナツチャートを描画してレジストリに登録
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return; // 念のため guard
-
-        const pData   = m.portfolio && m.portfolio.length ? m.portfolio : [1];
-        const pColors = m.portfolio && m.portfolio.length ? STOCK_COLORS  : ['#e2e8f0'];
-
-        postChartRegistry[canvasId] = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
-            data: { datasets: [{ data: pData, backgroundColor: pColors, borderWidth: 0 }] },
-            options: {
-                cutout: '68%',
-                responsive: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                events: [],
-                animation: false   // 多数描画時のちらつきを防止
-            }
-        });
     });
 }
 
