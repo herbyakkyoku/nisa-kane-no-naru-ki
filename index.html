@@ -4,1205 +4,395 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>みんなのNISA - ポートフォリオSNS</title>
-    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary: #2ecc71;
-            --primary-dark: #27ae60;
-            --accent: #4285F4;
-            --danger: #e74c3c;
-            --bg: #f0f4f8;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-            background: var(--bg);
-            margin: 0;
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-
+        :root { --primary: #2ecc71; --accent: #4285F4; --bg: #f8fafc; }
+        body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; color: #1e293b; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
         .app-container { width: 100%; max-width: 480px; position: relative; }
-
-        /* ========== HEADER ========== */
-        .header {
-            background: white;
-            padding: 14px 15px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+        
+        .header { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: center; align-items: center; position: sticky; top: 0; z-index: 100; }
         .logo { font-size: 1.1rem; font-weight: 900; color: var(--primary); }
-        .header-right { display: flex; gap: 10px; align-items: center; }
 
-        /* 通知ベルボタン */
-        .notif-btn {
-            position: relative;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            color: var(--text-muted);
-        }
-        .notif-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: var(--danger);
-            color: white;
-            font-size: 0.55rem;
-            font-weight: bold;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            display: none;
-        }
-
-        /* ========== CARDS ========== */
-        .card {
-            background: var(--card-bg);
-            margin: 15px;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        /* ========== DASHBOARD ========== */
+        .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        /* ダッシュボードUI */
         .dashboard-container { display: flex; gap: 15px; align-items: center; }
-        .dashboard-left { flex: 0 0 155px; position: relative; cursor: pointer; }
-        .chart-box { width: 155px; height: 155px; position: relative; }
-        .chart-center-icon {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70px; height: 70px;
-            border-radius: 50%; object-fit: cover;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-            pointer-events: none;
-        }
+        .dashboard-left { flex: 0 0 160px; position: relative; cursor: pointer; } 
+        .chart-box { width: 160px; height: 160px; position: relative; }
+        .chart-center-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); pointer-events: none; }
         .dashboard-right { flex: 1; }
-        .bio-text { font-size: 0.78rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 10px; min-height: 2.5em; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-        .stat-box { background: #f8fafc; padding: 8px; border-radius: 12px; text-align: center; }
-        .stat-label { font-size: 0.58rem; color: var(--text-muted); display: block; margin-bottom: 2px; }
-        .stat-value { font-size: 0.72rem; font-weight: bold; white-space: nowrap; }
+        .bio-text { font-size: 0.8rem; line-height: 1.4; color: #475569; margin-bottom: 12px; min-height: 3em; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-box { background: #f1f5f9; padding: 8px; border-radius: 10px; text-align: center; }
+        .stat-label { font-size: 0.6rem; color: #64748b; display: block; margin-bottom: 2px; }
+        .stat-value { font-size: 0.75rem; font-weight: bold; white-space: nowrap; }
 
-        /* ========== BUTTONS ========== */
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 14px;
-            font-weight: bold;
-            width: calc(100% - 30px);
-            margin: 10px 15px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            transition: background 0.2s;
-        }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-secondary {
-            background: #f1f5f9;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            width: 100%;
-            margin-top: 8px;
-        }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 15px; font-weight: bold; width: calc(100% - 30px); margin: 10px 15px; cursor: pointer; font-size: 1rem; }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; width: 100%; margin-top: 5px; }
 
-        /* ========== SUB TABS ========== */
-        .sub-tab-container {
-            display: flex;
-            background: white;
-            border-bottom: 1px solid var(--border);
-            margin-top: 10px;
-        }
-        .sub-tab {
-            flex: 1; text-align: center;
-            padding: 12px;
-            font-size: 0.82rem;
-            font-weight: bold;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .sub-tab.active { color: var(--primary); border-bottom: 2.5px solid var(--primary); }
+        /* サブタブ (マイページ内) */
+        .sub-tab-container { display: flex; background: white; border-bottom: 1px solid #e2e8f0; margin-top: 10px; }
+        .sub-tab { flex: 1; text-align: center; padding: 12px; font-size: 0.85rem; font-weight: bold; color: #94a3b8; cursor: pointer; }
+        .sub-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-        /* ========== POST CARDS ========== */
+        /* --- 掲示板レイアウト --- */
         .post-container { padding: 10px 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg-card {
-            background: white;
-            padding: 14px;
-            border-radius: 16px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-            transition: box-shadow 0.2s;
-        }
-        .msg-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .msg-main { display: flex; align-items: flex-start; }
+        .msg-card { display: flex; background: white; padding: 12px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; align-items: flex-start; }
+        
         .msg-left { flex-shrink: 0; margin-right: 12px; cursor: pointer; }
-        .msg-right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        
+        .msg-right { flex: 1; display: flex; flex-direction: column; }
         .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .msg-user { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
-        .msg-date { font-size: 0.62rem; color: #cbd5e1; }
-        .msg-text { font-size: 0.88rem; color: var(--text); line-height: 1.55; word-break: break-all; margin-bottom: 8px; }
+        .msg-date { font-size: 0.65rem; color: #cbd5e1; }
+        .msg-text { font-size: 0.9rem; color: #1e293b; line-height: 1.5; word-break: break-all; }
 
-        /* アクションボタン */
-        .msg-actions {
-            display: flex;
-            gap: 16px;
-            margin-top: 5px;
-            border-top: 1px solid #f8fafc;
-            padding-top: 8px;
-        }
-        .action-btn {
-            display: flex; align-items: center; gap: 4px;
-            font-size: 0.7rem; color: #94a3b8;
-            cursor: pointer; background: none; border: none;
-            padding: 3px 6px; border-radius: 6px;
-            transition: background 0.15s, color 0.15s;
-        }
-        .action-btn:hover { background: #f1f5f9; color: var(--text-muted); }
-        .action-btn.liked { color: var(--danger); font-weight: bold; }
-        .action-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; flex-shrink: 0; }
-        .action-btn.liked .action-icon { fill: var(--danger); stroke: var(--danger); }
-
-        /* 返信セクション */
-        .replies-list { margin-top: 8px; padding-left: 10px; border-left: 2px solid #f1f5f9; display: flex; flex-direction: column; gap: 4px; }
-        .reply-item { font-size: 0.73rem; color: var(--text-muted); line-height: 1.4; }
-        .reply-user { font-weight: bold; color: var(--primary); margin-right: 4px; }
-
-        /* ========== 掲示板入力エリア ========== */
-        .chat-input-area {
-            background: white;
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 49px; z-index: 80;
-        }
+        /* 掲示板入力エリア */
+        .chat-input-area { background: white; padding: 15px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 50px; z-index: 80; }
         .chat-input-bar { display: flex; gap: 8px; }
-        .chat-input-bar input {
-            flex: 1; border: 1px solid var(--border);
-            border-radius: 12px; padding: 10px 14px;
-            font-size: 0.88rem; outline: none;
-            transition: border-color 0.2s;
-        }
-        .chat-input-bar input:focus { border-color: var(--primary); }
-        .chat-send-btn {
-            background: var(--accent); color: white;
-            border: none; border-radius: 12px;
-            padding: 0 16px; font-weight: bold;
-            cursor: pointer; white-space: nowrap;
-            font-size: 0.85rem;
-        }
+        .chat-input-bar input { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; font-size: 0.9rem; }
+        .chat-send-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 15px; font-weight: bold; cursor: pointer; }
 
-        /* ========== NAV BAR ========== */
-        .nav-bar {
-            position: fixed; bottom: 0;
-            width: 100%; max-width: 480px;
-            height: 70px;
-            background: white;
-            border-top: 1px solid var(--border);
-            display: flex; justify-content: space-around;
-            align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 1000;
-        }
-        .nav-item {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: #94a3b8; cursor: pointer;
-            border: none; background: none;
-            transition: color 0.2s;
-        }
+        /* ナビゲーション */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 70px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
         .nav-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-bottom: 4px; }
-        .nav-label { font-size: 0.58rem; font-weight: bold; }
+        .nav-label { font-size: 0.6rem; font-weight: bold; }
 
-        /* ========== MODALS ========== */
-        .modal {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55);
-            z-index: 2000; display: none;
-            align-items: flex-end;
-        }
-        .modal.open { display: flex; }
-        .modal-content {
-            background: white;
-            width: 100%; padding: 25px;
-            border-radius: 25px 25px 0 0;
-            max-height: 88vh; overflow-y: auto;
-            box-sizing: border-box;
-            animation: slideUp 0.25s ease-out;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .modal-handle {
-            width: 40px; height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            margin: 0 auto 20px;
-        }
-        .input-item { margin-bottom: 14px; }
-        .input-item label { font-size: 0.73rem; font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-muted); }
-        .input-item input, .input-item textarea {
-            width: 100%; padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px; font-size: 0.88rem;
-            outline: none; transition: border-color 0.2s;
-        }
-        .input-item input:focus, .input-item textarea:focus { border-color: var(--primary); }
-        .checkbox-item {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.85rem; font-weight: bold;
-            background: #f8fafc; padding: 12px;
-            border-radius: 12px; margin-bottom: 14px;
-            cursor: pointer;
-        }
-        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute; inset: 0;
-            background: #cbd5e1; border-radius: 24px;
-            transition: 0.3s; cursor: pointer;
-        }
-        .toggle-slider:before {
-            content: ""; position: absolute;
-            width: 18px; height: 18px;
-            background: white; border-radius: 50%;
-            left: 3px; top: 3px;
-            transition: 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        }
-        input:checked + .toggle-slider { background: var(--primary); }
-        input:checked + .toggle-slider:before { transform: translateX(20px); }
-
-        .stock-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
-        .stock-row input { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; outline: none; }
-        .stock-row input:focus { border-color: var(--primary); }
-        .detail-item {
-            display: flex; justify-content: space-between;
-            align-items: center; padding: 12px 0;
-            border-bottom: 1px solid #f8fafc;
-        }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
+        .modal-content { position: absolute; bottom: 0; background: white; width: 100%; padding: 25px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
+        .input-item { margin-bottom: 12px; }
+        .input-item label { font-size: 0.75rem; font-weight: bold; display: block; margin-bottom: 4px; }
+        .input-item input, .input-item textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 0.9rem; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: bold; background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; }
+        .stock-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         .chip-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-
-        /* ========== 通知モーダル ========== */
-        .notif-item {
-            display: flex; align-items: flex-start; gap: 10px;
-            padding: 12px 0; border-bottom: 1px solid #f8fafc;
-        }
-        .notif-icon {
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.9rem; flex-shrink: 0;
-        }
-        .notif-icon.like { background: #fef2f2; color: var(--danger); }
-        .notif-icon.reply { background: #eff6ff; color: var(--accent); }
-        .notif-body { flex: 1; }
-        .notif-text { font-size: 0.8rem; color: var(--text); line-height: 1.4; }
-        .notif-time { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
-        .notif-unread { background: #f0fdf4; border-radius: 10px; padding: 8px 10px; }
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.85rem; }
-        .empty-state-icon { font-size: 2.5rem; margin-bottom: 10px; }
-
-        /* 返信入力 */
-        .reply-input-row {
-            display: flex; gap: 6px; margin-top: 8px;
-            padding-top: 8px; border-top: 1px solid #f8fafc;
-        }
-        .reply-input-row input {
-            flex: 1; border: 1px solid var(--border);
-            border-radius: 10px; padding: 7px 10px;
-            font-size: 0.8rem; outline: none;
-        }
-        .reply-send-btn {
-            background: var(--accent); color: white;
-            border: none; border-radius: 10px;
-            padding: 0 12px; font-size: 0.75rem;
-            font-weight: bold; cursor: pointer;
-        }
-
         .hidden { display: none !important; }
-
-        /* ローディング */
-        .loading-text { text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px; }
-
-        /* ログイン画面 */
-        #login-section { margin-top: 60px; text-align: center; }
-        #login-section h2 { font-size: 1.3rem; margin-bottom: 6px; }
-        #login-section p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
-        .login-btn {
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; background: #333; color: white;
-            border: none; padding: 14px 20px;
-            border-radius: 14px; font-weight: bold;
-            font-size: 0.95rem; width: 100%; cursor: pointer;
-        }
-        .google-icon { width: 20px; height: 20px; }
     </style>
 </head>
 <body>
+
 <div class="app-container">
+    <header class="header"><div class="logo">みんなのNISA</div></header>
 
-    <header class="header">
-        <div class="logo">みんなのNISA 🌱</div>
-        <div class="header-right" id="header-right-auth" style="display:none;">
-            <button class="notif-btn" id="notif-btn" onclick="openNotifModal()">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                <span class="notif-badge" id="notif-badge">0</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- ===== ログイン画面 ===== -->
-    <div id="login-section" class="card">
-        <div style="font-size:3rem; margin-bottom:10px;">🌱</div>
-        <h2>みんなのNISA</h2>
-        <p>ポートフォリオを共有して<br>投資仲間と繋がろう</p>
-        <button id="btn-login" class="login-btn">
-            <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Googleでログイン
-        </button>
+    <div id="login-section" class="card" style="margin-top: 50px; text-align: center;">
+        <h2>資産をシェアしよう</h2>
+        <button id="btn-login" class="btn-primary" style="background:#333; width:100%; margin:0;">Googleでログイン</button>
     </div>
 
-    <!-- ===== 認証後コンテンツ ===== -->
     <div id="authenticated-content" class="hidden">
-
-        <!-- プロフィールカード -->
+        
         <div id="profile-card" class="card">
             <div class="dashboard-container">
-                <div class="dashboard-left" onclick="showMyDetails()">
+                <div class="dashboard-left" onclick="showDetails()">
                     <div class="chart-box">
                         <canvas id="myChart"></canvas>
-                        <img id="chart-avatar" class="chart-center-icon" src="" alt="" referrerpolicy="no-referrer">
+                        <img id="chart-avatar" class="chart-center-icon" src="" alt="">
                     </div>
                 </div>
                 <div class="dashboard-right">
-                    <div id="display-name" style="font-weight:bold; color:var(--primary); margin-bottom:5px; font-size:0.9rem;"></div>
+                    <div id="display-name" style="font-weight:bold; color:var(--primary); margin-bottom:5px;"></div>
                     <div id="display-bio" class="bio-text"></div>
                     <div class="stats-grid">
-                        <div class="stat-box"><span class="stat-label">💰 利益額</span><div id="val-profit" class="stat-value">―</div></div>
-                        <div class="stat-box"><span class="stat-label">📊 銘柄数</span><div id="val-count" class="stat-value">―</div></div>
-                        <div class="stat-box"><span class="stat-label">❤️ いいね数</span><div id="val-likes" class="stat-value">0</div></div>
-                        <div class="stat-box"><span class="stat-label">💼 合計投資額</span><div id="val-total" class="stat-value">―</div></div>
+                        <div class="stat-box"><span class="stat-label">①利益額</span><div id="val-profit" class="stat-value"></div></div>
+                        <div class="stat-box"><span class="stat-label">②銘柄数</span><div id="val-count" class="stat-value"></div></div>
+                        <div class="stat-box"><span class="stat-label">③いいね数</span><div id="val-likes" class="stat-value">0</div></div>
+                        <div class="stat-box"><span class="stat-label">④合計投資額</span><div id="val-total" class="stat-value"></div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== マイ資産ページ ===== -->
         <div id="main-view">
-            <button class="btn-primary" onclick="openSettings()">ポートフォリオを編集する ✏️</button>
+            <button class="btn-primary" onclick="showSettings()">ポートフォリオを編集する</button>
             <div class="sub-tab-container">
                 <div class="sub-tab active" id="sub-tab-mine" onclick="switchSubTab('mine')">自分の投稿</div>
                 <div class="sub-tab" id="sub-tab-likes" onclick="switchSubTab('likes')">いいねした投稿</div>
             </div>
-            <div id="my-posts-list" class="post-container">
-                <div class="loading-text">読み込み中...</div>
-            </div>
+            <div id="my-posts-list" class="post-container"></div>
         </div>
 
-        <!-- ===== 掲示板ページ ===== -->
         <div id="chat-view" class="hidden">
             <div class="chat-input-area">
                 <div class="chat-input-bar">
-                    <input type="text" id="chat-input" placeholder="投資仲間にメッセージを投稿..." maxlength="200">
+                    <input type="text" id="chat-input" placeholder="投資仲間にメッセージを投稿...">
                     <button id="chat-send-btn" class="chat-send-btn">送信</button>
                 </div>
             </div>
-            <div id="all-posts-list" class="post-container">
-                <div class="loading-text">読み込み中...</div>
-            </div>
+            <div id="all-posts-list" class="post-container"></div>
         </div>
 
     </div>
 
-    <!-- ===== ナビゲーション ===== -->
     <nav class="nav-bar hidden" id="global-nav">
-        <button class="nav-item active" id="nav-main" onclick="switchTab('main')">
+        <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 4 4 7-7"/></svg>
             <span class="nav-label">マイ資産</span>
-        </button>
-        <button class="nav-item" id="nav-chat" onclick="switchTab('chat')">
+        </div>
+        <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
             <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="nav-label">掲示板</span>
-        </button>
+        </div>
     </nav>
 </div>
 
-<!-- ===== 銘柄内訳モーダル ===== -->
-<div id="detail-modal" class="modal" onclick="closeModal('detail-modal')">
+<div id="detail-modal" class="modal" onclick="hideDetails()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-handle"></div>
-        <h3 style="margin:0 0 5px; text-align:center; font-size:1rem;">銘柄内訳</h3>
-        <ul id="detail-list" style="list-style:none; padding:0; margin-top:16px;"></ul>
-        <button class="btn-secondary" onclick="closeModal('detail-modal')">閉じる</button>
+        <h3 style="margin:0; text-align:center;">銘柄内訳</h3>
+        <ul id="detail-list" style="list-style:none; padding:0; margin-top:20px;"></ul>
+        <button class="btn-secondary" onclick="hideDetails()">閉じる</button>
     </div>
 </div>
 
-<!-- ===== ポートフォリオ設定モーダル ===== -->
-<div id="settings-modal" class="modal" onclick="closeModal('settings-modal')">
+<div id="settings-modal" class="modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-handle"></div>
-        <h3 style="margin:0 0 16px 0; font-size:1rem;">プロフィール設定</h3>
-
-        <label class="checkbox-item">
-            <span style="flex:1;">資産額を非表示にする</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="set-hide-amount">
-                <span class="toggle-slider"></span>
-            </label>
-        </label>
-
-        <label class="checkbox-item">
-            <span style="flex:1;">🔔 通知を受け取る（いいね・返信）</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="set-notif-enabled" checked>
-                <span class="toggle-slider"></span>
-            </label>
-        </label>
-
-        <div class="input-item">
-            <label>自己紹介</label>
-            <textarea id="set-bio" rows="2" placeholder="例：30代会社員。インデックス中心に積立中"></textarea>
-        </div>
-        <div class="input-item">
-            <label>利益額 (万円)</label>
-            <input type="number" id="set-target-profit" placeholder="0" min="0">
-        </div>
-        <div class="input-item">
-            <label>全世界株式 / オルカン (万円)</label>
-            <input type="number" id="set-ac" placeholder="0" min="0">
-        </div>
-        <div class="input-item">
-            <label>米国株式 S&P500 (万円)</label>
-            <input type="number" id="set-sp" placeholder="0" min="0">
-        </div>
+        <h3 style="margin:0 0 15px 0;">プロフィール設定</h3>
+        <label class="checkbox-item"><input type="checkbox" id="set-hide-amount"> 資産額を非表示にする</label>
+        <div class="input-item"><label>自己紹介</label><textarea id="set-bio" rows="2"></textarea></div>
+        <div class="input-item"><label>利益額 (万円)</label><input type="number" id="set-target-profit"></div>
+        <div class="input-item"><label>全世界株式 (万円)</label><input type="number" id="set-ac"></div>
+        <div class="input-item"><label>米国株式 S&P500 (万円)</label><input type="number" id="set-sp"></div>
         <div id="stock-list-container"></div>
         <button type="button" class="btn-secondary" onclick="addStockRow()">＋ 個別銘柄を追加</button>
-        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin:16px 0 0;">保存して更新 ✅</button>
-    </div>
-</div>
-
-<!-- ===== 通知モーダル ===== -->
-<div id="notif-modal" class="modal" onclick="closeModal('notif-modal')">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-handle"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h3 style="margin:0; font-size:1rem;">通知</h3>
-            <button onclick="markAllRead()" style="background:none; border:none; font-size:0.75rem; color:var(--primary); cursor:pointer; font-weight:bold;">すべて既読</button>
-        </div>
-        <div id="notif-list"></div>
-    </div>
-</div>
-
-<!-- ===== 返信モーダル ===== -->
-<div id="reply-modal" class="modal" onclick="closeModal('reply-modal')">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-handle"></div>
-        <h3 style="margin:0 0 12px; font-size:1rem;">返信する</h3>
-        <div id="reply-target-preview" style="background:#f8fafc; border-radius:10px; padding:10px; margin-bottom:14px; font-size:0.8rem; color:var(--text-muted);"></div>
-        <div style="display:flex; gap:8px;">
-            <input type="text" id="reply-input" placeholder="返信を入力..." maxlength="200"
-                style="flex:1; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:0.88rem; outline:none;">
-            <button onclick="submitReply()" class="chat-send-btn">送信</button>
-        </div>
+        <button class="btn-primary" onclick="saveSettings()" style="width:100%; margin-top:20px;">保存して更新</button>
     </div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-    getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-    getDatabase, ref, get, set, update, onValue, push,
-    serverTimestamp, query, orderByChild, equalTo,
-    limitToLast, runTransaction, remove
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, update, onValue, push, serverTimestamp, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// =====================================================
-// Firebase 初期化
-// =====================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
-    authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
-    databaseURL: "https://nisa-kane-no-naru-ki-default-rtdb.firebaseio.com",
-    projectId: "nisa-kane-no-naru-ki",
-    appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
+        authDomain: "nisa-kane-no-naru-ki.firebaseapp.com",
+        databaseURL: "https://nisa-kane-no-naru-ki-default-rtdb.firebaseio.com",
+        projectId: "nisa-kane-no-naru-ki",
+        appId: "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-// =====================================================
-// グローバル状態
-// =====================================================
-let currentUser      = null;
-let myChart          = null;
-let currentData      = {};
-let currentPortfolioList = [];
-let unsubNotif       = null;
-let currentReplyPostKey = null;
+    let currentUser = null;
+    let myChart = null;
+    let currentData = {};
+    let currentPortfolioList = [];
+    const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
 
-const STOCK_COLORS = ['#2ecc71','#f39c12','#9b59b6','#3498db','#e74c3c','#1abc9c','#f1c40f','#e67e22','#16a085'];
-
-// =====================================================
-// 認証
-// =====================================================
-document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
-
-onAuthStateChanged(auth, user => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('authenticated-content').classList.remove('hidden');
-        document.getElementById('global-nav').classList.remove('hidden');
-        document.getElementById('header-right-auth').style.display = 'flex';
-
-        document.getElementById('chart-avatar').src = user.photoURL || '';
-        document.getElementById('display-name').innerText = user.displayName || '名無しさん';
-
-        // ユーザーデータのリアルタイム購読
-        onValue(ref(db, `users/${user.uid}`), snap => {
-            updateMyUI(snap.val() || {});
-        });
-
-        // 通知のリアルタイム購読
-        subscribeNotifications();
-
-        // 掲示板の全投稿購読
-        loadAllPosts();
-
-        // マイ投稿の初期表示
-        loadMyPosts('mine');
-    }
-});
-
-// =====================================================
-// マイ資産 UI 更新
-// =====================================================
-function updateMyUI(data) {
-    currentData = data;
-    const isHidden = data.hideAmount === true;
-
-    const ac     = (parseFloat(data.ac)  || 0) * 10000;
-    const sp     = (parseFloat(data.sp)  || 0) * 10000;
-    const stocks = data.stocks || [];
-
-    let list = [];
-    if (ac > 0) list.push({ name: '全世界', val: ac,  color: STOCK_COLORS[0] });
-    if (sp > 0) list.push({ name: 'S&P500', val: sp,  color: STOCK_COLORS[1] });
-    stocks.forEach((s, i) => {
-        const v = (parseFloat(s.val) || 0) * 10000;
-        if (v > 0) list.push({ name: s.name, val: v, color: STOCK_COLORS[(i + 2) % STOCK_COLORS.length] });
-    });
-    list.sort((a, b) => b.val - a.val);
-    currentPortfolioList = list;
-
-    const total = list.reduce((s, i) => s + i.val, 0);
-    const profit = (parseFloat(data.targetProfit) || 0) * 10000;
-
-    document.getElementById('display-bio').innerText = data.bio || '自己紹介を設定してみましょう 👋';
-    document.getElementById('val-total').innerText  = isHidden ? '¥*****' : `¥${total.toLocaleString()}`;
-    document.getElementById('val-profit').innerText = isHidden ? '¥*****' : `¥${profit.toLocaleString()}`;
-    document.getElementById('val-count').innerText  = `${list.length} 銘柄`;
-    document.getElementById('val-likes').innerText  = (data.receivedLikes || 0).toLocaleString();
-
-    // ドーナツチャート再描画
-    if (myChart) myChart.destroy();
-    const ctx = document.getElementById('myChart').getContext('2d');
-    myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: list.map(i => i.name),
-            datasets: [{
-                data: list.length ? list.map(i => i.val) : [1],
-                backgroundColor: list.length ? list.map(i => i.color) : ['#e2e8f0'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            cutout: '76%',
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            animation: { duration: 400 }
+    onAuthStateChanged(auth, user => {
+        if(user) {
+            currentUser = user;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('authenticated-content').classList.remove('hidden');
+            document.getElementById('global-nav').classList.remove('hidden');
+            document.getElementById('chart-avatar').src = user.photoURL;
+            document.getElementById('display-name').innerText = user.displayName;
+            
+            onValue(ref(db, `users/${user.uid}`), snap => updateMyUI(snap.val() || {}));
+            loadAllPosts();
+            loadMyPosts('mine');
         }
     });
-}
 
-// =====================================================
-// タブ切り替え
-// =====================================================
-window.switchTab = (tab) => {
-    const isMain = tab === 'main';
-    document.getElementById('main-view').classList.toggle('hidden', !isMain);
-    document.getElementById('chat-view').classList.toggle('hidden', isMain);
-    document.getElementById('profile-card').classList.toggle('hidden', !isMain);
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById(`nav-${tab}`).classList.add('active');
-};
+    function updateMyUI(data) {
+        currentData = data;
+        const isHidden = data.hideAmount === true;
+        const ac = (parseInt(data.ac) || 0) * 10000;
+        const sp = (parseInt(data.sp) || 0) * 10000;
+        const stocks = data.stocks || [];
+        
+        let list = [];
+        if (ac > 0) list.push({ name: '全世界', val: ac, color: '#2ecc71' });
+        if (sp > 0) list.push({ name: 'S&P500', val: sp, color: '#f39c12' });
+        stocks.forEach((s, i) => list.push({ name: s.name, val: (parseInt(s.val) || 0) * 10000, color: stockColors[(i + 2) % stockColors.length] }));
+        list.sort((a, b) => b.val - a.val);
+        currentPortfolioList = list;
 
-window.switchSubTab = (sub) => {
-    document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
-    document.getElementById(`sub-tab-${sub}`).classList.add('active');
-    loadMyPosts(sub);
-};
+        const total = list.reduce((s, i) => s + i.val, 0);
+        document.getElementById('display-bio').innerText = data.bio || "自己紹介を設定してみましょう";
+        document.getElementById('val-total').innerText = isHidden ? "¥********" : `¥${total.toLocaleString()}`;
+        document.getElementById('val-profit').innerText = isHidden ? "¥********" : `¥${((data.targetProfit || 0) * 10000).toLocaleString()}`;
+        document.getElementById('val-count').innerText = `${list.length} 銘柄`;
 
-// =====================================================
-// 投稿の読み込み (マイページ)
-// =====================================================
-async function loadMyPosts(mode) {
-    const listEl = document.getElementById('my-posts-list');
-    listEl.innerHTML = '<div class="loading-text">読み込み中...</div>';
-
-    const dbRef = ref(db, 'messages/room_0');
-
-    if (mode === 'likes') {
-        const allSnap = await get(query(dbRef, limitToLast(200)));
-        const likedPosts = [];
-        allSnap.forEach(snap => {
-            const post = snap.val();
-            if (post.likes && post.likes[currentUser.uid]) {
-                likedPosts.push({ key: snap.key, ...post });
-            }
+        if (myChart) myChart.destroy();
+        myChart = new Chart(document.getElementById('myChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: list.map(i => i.name),
+                datasets: [{ data: list.map(i => i.val), backgroundColor: list.map(i => i.color), borderWidth: 0 }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
         });
-        renderPosts(likedPosts, listEl);
-    } else {
-        const q = query(dbRef, orderByChild('uid'), equalTo(currentUser.uid));
+    }
+
+    window.switchTab = (tab) => {
+        document.getElementById('main-view').classList.toggle('hidden', tab !== 'main');
+        document.getElementById('chat-view').classList.toggle('hidden', tab !== 'chat');
+        document.getElementById('profile-card').classList.toggle('hidden', tab === 'chat');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`nav-${tab}`).classList.add('active');
+    };
+
+    window.switchSubTab = (sub) => {
+        document.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(`sub-tab-${sub}`).classList.add('active');
+        loadMyPosts(sub);
+    };
+
+    async function loadMyPosts(mode) {
+        const listEl = document.getElementById('my-posts-list');
+        listEl.innerHTML = "読込中...";
+        if(mode === 'likes') {
+            listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:#94a3b8;">開発中</p>';
+            return;
+        }
+        const q = query(ref(db, 'messages/room_0'), orderByChild('uid'), equalTo(currentUser.uid));
         const snap = await get(q);
-        const msgs = [];
-        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-        renderPosts(msgs, listEl);
-    }
-}
-
-// =====================================================
-// 全投稿のリアルタイム購読 (掲示板)
-// =====================================================
-function loadAllPosts() {
-    onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => {
-        const msgs = [];
-        snap.forEach(c => msgs.push({ key: c.key, ...c.val() }));
-        renderPosts(msgs, document.getElementById('all-posts-list'));
-    });
-}
-
-// =====================================================
-// ミニドーナツチャートをSVGで描画（Chart.js不使用）
-// Canvas/Chart.jsのライフサイクル問題を完全に回避
-// =====================================================
-function buildDonutSVG(values, colors, size) {
-    const cx = size / 2, cy = size / 2;
-    const outerR = size / 2 - 1;
-    const innerR = outerR * 0.65;
-    const total  = values.reduce((s, v) => s + (v || 0), 0);
-
-    if (!total) {
-        // データなし：灰色の円
-        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-            <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="#e2e8f0"/>
-            <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="white"/>
-        </svg>`;
+        renderPosts(snap, listEl);
     }
 
-    let paths = '';
-    let startAngle = -Math.PI / 2; // 12時スタート
-
-    values.forEach((v, i) => {
-        if (!v) return;
-        const slice = (v / total) * 2 * Math.PI;
-        const endAngle = startAngle + slice;
-
-        const x1 = cx + outerR * Math.cos(startAngle);
-        const y1 = cy + outerR * Math.sin(startAngle);
-        const x2 = cx + outerR * Math.cos(endAngle);
-        const y2 = cy + outerR * Math.sin(endAngle);
-        const ix1 = cx + innerR * Math.cos(endAngle);
-        const iy1 = cy + innerR * Math.sin(endAngle);
-        const ix2 = cx + innerR * Math.cos(startAngle);
-        const iy2 = cy + innerR * Math.sin(startAngle);
-        const large = slice > Math.PI ? 1 : 0;
-        const color = colors[i % colors.length];
-
-        paths += `<path d="M${x1},${y1} A${outerR},${outerR} 0 ${large},1 ${x2},${y2}
-            L${ix1},${iy1} A${innerR},${innerR} 0 ${large},0 ${ix2},${iy2} Z"
-            fill="${color}"/>`;
-        startAngle = endAngle;
-    });
-
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
-}
-
-// =====================================================
-// 投稿レンダリング（SVGアイコン版・Chart.js不使用）
-// =====================================================
-function renderPosts(msgs, targetEl) {
-    targetEl.innerHTML = '';
-
-    const data = [...msgs].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    if (data.length === 0) {
-        targetEl.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>まだ投稿がありません</p>
-            </div>`;
-        return;
+    function loadAllPosts() {
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(50)), snap => renderPosts(snap, document.getElementById('all-posts-list')));
     }
 
-    data.forEach(m => {
-        const nickname  = m.nickname || '名無しさん';
-        const timeStr   = m.timestamp
-            ? new Date(m.timestamp).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
-            : '';
-        const isLiked   = m.likes && currentUser && m.likes[currentUser.uid];
-        const likeCount = m.likeCount || 0;
-
-        // ポートフォリオ SVG ドーナツ
-        const pVals   = (m.portfolio && m.portfolio.length) ? m.portfolio : [1];
-        const pColors = (m.portfolio && m.portfolio.length) ? STOCK_COLORS : ['#e2e8f0'];
-        const donutSVG = buildDonutSVG(pVals, pColors, 48);
-
-        // アバター（イニシャルフォールバック付き）
-        const initial = escHtml(nickname.charAt(0));
-        const avatarHTML = m.userPhoto
-            ? `<img src="${m.userPhoto}" referrerpolicy="no-referrer"
-                   style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-                          width:24px;height:24px;border-radius:50%;object-fit:cover;border:1.5px solid white;"
-                   onerror="this.outerHTML='<div style=\\'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:#94a3b8;color:white;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;\\'>${initial}</div>'">`
-            : `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-                           width:24px;height:24px;border-radius:50%;background:#94a3b8;
-                           color:white;font-size:10px;font-weight:bold;
-                           display:flex;align-items:center;justify-content:center;">${initial}</div>`;
-
-        // 返信リスト
-        let repliesHTML = '';
-        if (m.replies) {
-            const replyVals = Object.values(m.replies)
-                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-            const shown = replyVals.slice(-3);
-            if (replyVals.length > 3) {
-                repliesHTML += `<div class="reply-item" style="color:#94a3b8;">他 ${replyVals.length - 3} 件の返信</div>`;
+    window.showPostDetails = (mKey) => {
+        const listEl = document.getElementById('detail-list');
+        listEl.innerHTML = "";
+        get(ref(db, `messages/room_0/${mKey}`)).then(snap => {
+            const m = snap.val();
+            if(!m) return;
+            const isHidden = m.hideAmount === true;
+            const fullList = m.fullPortfolioList || [];
+            const totalVal = fullList.reduce((sum, item) => sum + item.val, 0);
+            if(fullList.length === 0) {
+                listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem;">内訳データがありません</p>';
+            } else {
+                fullList.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'detail-item';
+                    const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
+                    const valDisplay = isHidden ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
+                    li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valDisplay}</strong>`;
+                    listEl.appendChild(li);
+                });
             }
-            repliesHTML += shown.map(r =>
-                `<div class="reply-item"><span class="reply-user">${escHtml(r.nickname || '名無しさん')}</span>${escHtml(r.text)}</div>`
-            ).join('');
-        }
+            document.getElementById('detail-modal').style.display = 'block';
+        });
+    };
 
-        const div = document.createElement('div');
-        div.className = 'msg-card';
-
-        div.innerHTML = `
-            <div class="msg-main">
-                <div class="msg-left" style="position:relative;width:48px;height:48px;flex-shrink:0;cursor:pointer;"
-                     onclick="showPostDetails('${m.key}')">
-                    ${donutSVG}
-                    ${avatarHTML}
+    function renderPosts(snap, targetEl) {
+        targetEl.innerHTML = "";
+        const msgs = [];
+        snap.forEach(c => { msgs.push({ key: c.key, ...c.val() }); });
+        msgs.reverse().forEach(m => {
+            const nickname = m.nickname || "名無しさん";
+            const canvasId = `chart-post-${m.key}`;
+            const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "不明";
+            
+            const div = document.createElement('div');
+            div.className = 'msg-card';
+            div.innerHTML = `
+                <div class="msg-left" style="position: relative; width: 45px; height: 45px; flex-shrink: 0;" onclick="showPostDetails('${m.key}')">
+                    <canvas id="${canvasId}" width="45" height="45"></canvas>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: #eee; pointer-events: none;">
+                        <img src="${m.userPhoto || ''}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'; this.parentElement.innerText='${nickname.charAt(0)}';">
+                    </div>
                 </div>
                 <div class="msg-right">
-                    <div class="msg-header">
-                        <span class="msg-user">${escHtml(nickname)}</span>
-                        <span class="msg-date">${timeStr}</span>
-                    </div>
-                    <div class="msg-text">${escHtml(m.text || '')}</div>
-                    <div class="msg-actions">
-                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${m.key}', '${m.uid}')">
-                            <svg class="action-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                            <span>${likeCount}</span>
-                        </button>
-                        <button class="action-btn" onclick="openReplyModal('${m.key}', '${escHtml(nickname)}', '${escAttr(m.text || '')}')">
-                            <svg class="action-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            <span>返信</span>
-                        </button>
-                        <button class="action-btn" onclick="shareToX('${escAttr(nickname)}', '${escAttr(m.text || '')}')">
-                            <svg class="action-icon" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                            <span>シェア</span>
-                        </button>
-                    </div>
-                    ${repliesHTML ? `<div class="replies-list">${repliesHTML}</div>` : ''}
-                </div>
-            </div>`;
+                    <div class="msg-header"><span class="msg-user">${nickname}</span><span class="msg-date">${timeStr}</span></div>
+                    <div class="msg-text">${m.text || ""}</div>
+                </div>`;
+            targetEl.appendChild(div);
 
-        targetEl.appendChild(div);
-    });
-}
-
-// =====================================================
-// ① いいねトグル
-// =====================================================
-window.toggleLike = async (postKey, authorUid) => {
-    if (!currentUser) return;
-    const postRef = ref(db, `messages/room_0/${postKey}`);
-
-    let wasLiked = false;
-    await runTransaction(postRef, (post) => {
-        if (!post) return post;
-        if (!post.likes) post.likes = {};
-        if (post.likes[currentUser.uid]) {
-            delete post.likes[currentUser.uid];
-            post.likeCount = Math.max((post.likeCount || 1) - 1, 0);
-            wasLiked = true;
-        } else {
-            post.likes[currentUser.uid] = true;
-            post.likeCount = (post.likeCount || 0) + 1;
-            wasLiked = false;
-        }
-        return post;
-    });
-
-    // 投稿者の総いいね数を再集計（簡易版：+1/-1 で更新）
-    if (authorUid && authorUid !== currentUser.uid) {
-        const userRef = ref(db, `users/${authorUid}/receivedLikes`);
-        await runTransaction(userRef, (cur) => {
-            const n = (cur || 0) + (wasLiked ? -1 : 1);
-            return Math.max(n, 0);
+            let pData = m.portfolio || [1];
+            new Chart(document.getElementById(canvasId).getContext('2d'), {
+                type: 'doughnut',
+                data: { datasets: [{ data: pData, backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, borderWidth: 0 }] },
+                options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
+            });
         });
-
-        // ② 通知ドキュメントの作成（いいね）
-        if (!wasLiked) {
-            await createNotification(authorUid, postKey, 'like');
-        }
-    }
-};
-
-// =====================================================
-// ① 返信モーダル open / submit
-// =====================================================
-window.openReplyModal = (postKey, nickname, text) => {
-    currentReplyPostKey = postKey;
-    document.getElementById('reply-target-preview').innerHTML =
-        `<strong>${escHtml(nickname)}</strong>：${escHtml(text.substring(0, 60))}${text.length > 60 ? '…' : ''}`;
-    document.getElementById('reply-input').value = '';
-    openModal('reply-modal');
-};
-
-window.submitReply = async () => {
-    const text = document.getElementById('reply-input').value.trim();
-    if (!text || !currentUser || !currentReplyPostKey) return;
-
-    const postKey = currentReplyPostKey;
-    const replyRef = ref(db, `messages/room_0/${postKey}/replies`);
-    await push(replyRef, {
-        uid: currentUser.uid,
-        nickname: currentUser.displayName || '名無しさん',
-        text: text,
-        timestamp: serverTimestamp()
-    });
-
-    // 投稿者のUIDを取得して通知
-    const postSnap = await get(ref(db, `messages/room_0/${postKey}/uid`));
-    const authorUid = postSnap.val();
-    if (authorUid && authorUid !== currentUser.uid) {
-        await createNotification(authorUid, postKey, 'reply');
     }
 
-    closeModal('reply-modal');
-    // 掲示板を表示中なら更新は onValue が自動で行う
-    // マイページの場合は手動リロード
-    const myPostsEl = document.getElementById('my-posts-list');
-    if (!document.getElementById('chat-view').classList.contains('hidden') === false) {
-        loadMyPosts(document.getElementById('sub-tab-likes').classList.contains('active') ? 'likes' : 'mine');
-    }
-};
+    document.getElementById('chat-send-btn').onclick = async () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim() || !currentUser) return;
+        try {
+            await push(ref(db, 'messages/room_0'), {
+                uid: currentUser.uid, 
+                nickname: currentUser.displayName, 
+                userPhoto: currentUser.photoURL || "",
+                text: input.value, 
+                timestamp: serverTimestamp(),
+                portfolio: currentPortfolioList.map(item => item.val),
+                fullPortfolioList: currentPortfolioList,
+                hideAmount: currentData.hideAmount || false,
+                ac: currentData.ac || 0,
+                sp: currentData.sp || 0
+            });
+            input.value = "";
+        } catch (e) { console.error("送信エラー:", e); }
+    };
 
-// =====================================================
-// ① X (Twitter) シェア
-// =====================================================
-window.shareToX = (nickname, text) => {
-    const shareText = `${nickname}さんの投資メモ：「${text}」\n#みんなのNISA #NISA`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
-};
+    window.showSettings = () => {
+        const d = currentData;
+        document.getElementById('set-bio').value = d.bio || "";
+        document.getElementById('set-target-profit').value = d.targetProfit || 0;
+        document.getElementById('set-ac').value = d.ac || 0;
+        document.getElementById('set-sp').value = d.sp || 0;
+        document.getElementById('set-hide-amount').checked = d.hideAmount || false;
+        const container = document.getElementById('stock-list-container');
+        container.innerHTML = "";
+        (d.stocks || []).forEach(s => addStockRow(s.name, s.val));
+        document.getElementById('settings-modal').style.display = 'block';
+    };
 
-// =====================================================
-// 銘柄内訳モーダル（他ユーザー投稿）
-// =====================================================
-window.showPostDetails = async (mKey) => {
-    const listEl = document.getElementById('detail-list');
-    listEl.innerHTML = '<div class="loading-text">読み込み中...</div>';
-    openModal('detail-modal');
+    window.addStockRow = (name = "", val = "") => {
+        const div = document.createElement('div');
+        div.className = 'stock-row';
+        div.innerHTML = `<input type="text" placeholder="銘柄名" value="${name}" style="flex:2"><input type="number" placeholder="万円" value="${val}" style="flex:1"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; font-size:1.2rem;">×</button>`;
+        document.getElementById('stock-list-container').appendChild(div);
+    };
 
-    const snap = await get(ref(db, `messages/room_0/${mKey}`));
-    const m = snap.val();
-    if (!m) return;
-
-    const isHidden    = m.hideAmount === true;
-    const fullList    = m.fullPortfolioList || [];
-    const totalVal    = fullList.reduce((sum, item) => sum + (item.val || 0), 0);
-    listEl.innerHTML  = '';
-
-    if (fullList.length === 0) {
-        listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:var(--text-muted);">内訳データがありません</p>';
-        return;
-    }
-
-    fullList.forEach(item => {
-        const li      = document.createElement('li');
-        li.className  = 'detail-item';
-        const pct     = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
-        const valStr  = isHidden ? `(${pct}%)` : `¥${item.val.toLocaleString()} (${pct}%)`;
-        li.innerHTML  = `<span><span class="chip-dot" style="background:${item.color}"></span>${escHtml(item.name)}</span><strong>${valStr}</strong>`;
-        listEl.appendChild(li);
-    });
-};
-
-// =====================================================
-// 自分の銘柄内訳モーダル
-// =====================================================
-window.showMyDetails = () => {
-    const listEl  = document.getElementById('detail-list');
-    listEl.innerHTML = '';
-    const total   = currentPortfolioList.reduce((s, i) => s + i.val, 0);
-
-    if (currentPortfolioList.length === 0) {
-        listEl.innerHTML = '<p style="text-align:center; font-size:0.8rem; color:var(--text-muted);">銘柄を設定してみましょう</p>';
-        openModal('detail-modal');
-        return;
-    }
-
-    currentPortfolioList.forEach(item => {
-        const pct   = total > 0 ? ((item.val / total) * 100).toFixed(1) : 0;
-        const str   = currentData.hideAmount ? `(${pct}%)` : `¥${item.val.toLocaleString()} (${pct}%)`;
-        const li    = document.createElement('li');
-        li.className = 'detail-item';
-        li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${escHtml(item.name)}</span><strong>${str}</strong>`;
-        listEl.appendChild(li);
-    });
-    openModal('detail-modal');
-};
-
-// =====================================================
-// 投稿送信
-// =====================================================
-document.getElementById('chat-send-btn').onclick = sendPost;
-document.getElementById('chat-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPost(); }
-});
-
-async function sendPost() {
-    const input = document.getElementById('chat-input');
-    const text  = input.value.trim();
-    if (!text || !currentUser) return;
-
-    try {
-        await push(ref(db, 'messages/room_0'), {
-            uid:               currentUser.uid,
-            nickname:          currentUser.displayName || '名無しさん',
-            userPhoto:         currentUser.photoURL || '',
-            text:              text,
-            timestamp:         serverTimestamp(),
-            portfolio:         currentPortfolioList.map(i => i.val),
-            fullPortfolioList: currentPortfolioList,
-            hideAmount:        currentData.hideAmount || false,
-            likeCount:         0,
-            likes:             {}
+    window.saveSettings = async () => {
+        const stocks = [];
+        document.querySelectorAll('.stock-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if(inputs[0].value) stocks.push({ name: inputs[0].value, val: inputs[1].value });
         });
-        input.value = '';
-    } catch (e) {
-        console.error('送信エラー:', e);
-        alert('投稿に失敗しました。もう一度お試しください。');
-    }
-}
+        await update(ref(db, `users/${currentUser.uid}`), {
+            bio: document.getElementById('set-bio').value,
+            targetProfit: document.getElementById('set-target-profit').value,
+            ac: document.getElementById('set-ac').value,
+            sp: document.getElementById('set-sp').value,
+            hideAmount: document.getElementById('set-hide-amount').checked,
+            stocks: stocks
+        });
+        hideSettings();
+    };
 
-// =====================================================
-// 設定モーダル
-// =====================================================
-window.openSettings = () => {
-    const d = currentData;
-    document.getElementById('set-bio').value            = d.bio || '';
-    document.getElementById('set-target-profit').value  = d.targetProfit || '';
-    document.getElementById('set-ac').value             = d.ac || '';
-    document.getElementById('set-sp').value             = d.sp || '';
-    document.getElementById('set-hide-amount').checked  = d.hideAmount || false;
-    document.getElementById('set-notif-enabled').checked = d.notifEnabled !== false; // デフォルトON
+    window.showDetails = () => {
+        const listEl = document.getElementById('detail-list');
+        listEl.innerHTML = "";
+        const totalVal = currentPortfolioList.reduce((sum, item) => sum + item.val, 0);
+        currentPortfolioList.forEach(item => {
+            const percent = totalVal > 0 ? ((item.val / totalVal) * 100).toFixed(1) : 0;
+            const valStr = currentData.hideAmount ? `(${percent}%)` : `¥${item.val.toLocaleString()} (${percent}%)`;
+            const li = document.createElement('li');
+            li.className = 'detail-item';
+            li.innerHTML = `<span><span class="chip-dot" style="background:${item.color}"></span>${item.name}</span><strong>${valStr}</strong>`;
+            listEl.appendChild(li);
+        });
+        document.getElementById('detail-modal').style.display = 'block';
+    };
 
-    const container = document.getElementById('stock-list-container');
-    container.innerHTML = '';
-    (d.stocks || []).forEach(s => addStockRow(s.name, s.val));
-    openModal('settings-modal');
-};
-
-window.addStockRow = (name = '', val = '') => {
-    const div = document.createElement('div');
-    div.className = 'stock-row';
-    div.innerHTML = `
-        <input type="text" placeholder="銘柄名（例：トヨタ）" value="${escAttr(name)}" style="flex:2;">
-        <input type="number" placeholder="万円" value="${escAttr(String(val))}" min="0" style="flex:1;">
-        <button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--danger); font-size:1.3rem; cursor:pointer; padding:0 4px; flex-shrink:0;">×</button>`;
-    document.getElementById('stock-list-container').appendChild(div);
-};
-
-window.saveSettings = async () => {
-    if (!currentUser) return;
-    const stocks = [];
-    document.querySelectorAll('.stock-row').forEach(row => {
-        const inputs = row.querySelectorAll('input');
-        if (inputs[0].value.trim()) {
-            stocks.push({ name: inputs[0].value.trim(), val: parseFloat(inputs[1].value) || 0 });
-        }
-    });
-
-    await update(ref(db, `users/${currentUser.uid}`), {
-        bio:           document.getElementById('set-bio').value.trim(),
-        targetProfit:  parseFloat(document.getElementById('set-target-profit').value) || 0,
-        ac:            parseFloat(document.getElementById('set-ac').value) || 0,
-        sp:            parseFloat(document.getElementById('set-sp').value) || 0,
-        hideAmount:    document.getElementById('set-hide-amount').checked,
-        notifEnabled:  document.getElementById('set-notif-enabled').checked,
-        stocks:        stocks
-    });
-    closeModal('settings-modal');
-};
-
-// =====================================================
-// ③ 通知機能
-// =====================================================
-
-/** 通知ドキュメントを作成（相手の notifEnabled を確認） */
-async function createNotification(targetUid, postKey, type) {
-    // 通知 OFF のユーザーには送らない
-    const snap = await get(ref(db, `users/${targetUid}/notifEnabled`));
-    const enabled = snap.val();
-    if (enabled === false) return;
-
-    await push(ref(db, `notifications/${targetUid}`), {
-        type:          type,           // 'like' | 'reply'
-        postKey:       postKey,
-        fromUid:       currentUser.uid,
-        fromNickname:  currentUser.displayName || '名無しさん',
-        fromPhoto:     currentUser.photoURL || '',
-        timestamp:     serverTimestamp(),
-        read:          false
-    });
-}
-
-/** 通知をリアルタイム購読 */
-function subscribeNotifications() {
-    if (unsubNotif) unsubNotif();
-    const q = query(ref(db, `notifications/${currentUser.uid}`), limitToLast(30));
-    unsubNotif = onValue(q, snap => {
-        const notifs = [];
-        snap.forEach(c => notifs.push({ key: c.key, ...c.val() }));
-        renderNotifications(notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
-
-        const unread = notifs.filter(n => !n.read).length;
-        const badge  = document.getElementById('notif-badge');
-        badge.style.display = unread > 0 ? 'flex' : 'none';
-        badge.innerText = unread > 9 ? '9+' : unread;
-    });
-}
-
-/** 通知一覧をモーダルにレンダリング */
-function renderNotifications(notifs) {
-    const listEl = document.getElementById('notif-list');
-    listEl.innerHTML = '';
-
-    if (notifs.length === 0) {
-        listEl.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">🔔</div>
-                <p>通知はまだありません</p>
-            </div>`;
-        return;
-    }
-
-    notifs.forEach(n => {
-        const div     = document.createElement('div');
-        div.className = `notif-item ${!n.read ? 'notif-unread' : ''}`;
-
-        const timeStr = n.timestamp
-            ? new Date(n.timestamp).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
-            : '';
-        const icon  = n.type === 'like' ? '❤️' : '💬';
-        const label = n.type === 'like'
-            ? `<strong>${escHtml(n.fromNickname)}</strong> さんがあなたの投稿にいいねしました`
-            : `<strong>${escHtml(n.fromNickname)}</strong> さんがあなたの投稿に返信しました`;
-
-        div.innerHTML = `
-            <div class="notif-icon ${n.type}">${icon}</div>
-            <div class="notif-body">
-                <div class="notif-text">${label}</div>
-                <div class="notif-time">${timeStr}</div>
-            </div>`;
-        listEl.appendChild(div);
-    });
-}
-
-/** 通知モーダルを開く（開くと同時に既読処理） */
-window.openNotifModal = () => {
-    openModal('notif-modal');
-    markAllRead();
-};
-
-/** 全通知を既読にする */
-window.markAllRead = async () => {
-    if (!currentUser) return;
-    const snap = await get(ref(db, `notifications/${currentUser.uid}`));
-    const updates = {};
-    snap.forEach(c => {
-        if (!c.val().read) updates[`${c.key}/read`] = true;
-    });
-    if (Object.keys(updates).length > 0) {
-        await update(ref(db, `notifications/${currentUser.uid}`), updates);
-    }
-};
-
-// =====================================================
-// モーダル制御
-// =====================================================
-window.openModal  = (id) => { document.getElementById(id).classList.add('open'); };
-window.closeModal = (id) => { document.getElementById(id).classList.remove('open'); };
-
-// =====================================================
-// ユーティリティ
-// =====================================================
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-function escAttr(str) {
-    return escHtml(str).replace(/\n/g, ' ');
-}
-
-// Service Worker 登録
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
-}
+    window.hideDetails = () => document.getElementById('detail-modal').style.display = 'none';
+    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
 </script>
 </body>
 </html>
