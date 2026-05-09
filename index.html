@@ -182,6 +182,8 @@
     let myChart = null;
     let currentData = {};
     let currentPortfolioList = [];
+    // 【追加】掲示板内のグラフインスタンスを管理するためのオブジェクト
+    let postCharts = {}; 
     const stockColors = ['#2ecc71', '#f39c12', '#9b59b6', '#3498db', '#e74c3c', '#1abc9c', '#f1c40f'];
 
     onAuthStateChanged(auth, user => {
@@ -285,6 +287,7 @@
         });
     };
 
+    // 【書き換え】グラフのメモリリークと「Canvas reuse」エラーを防止したレンダリング関数
     function renderPosts(snap, targetEl) {
         targetEl.innerHTML = "";
         const msgs = [];
@@ -309,8 +312,14 @@
                 </div>`;
             targetEl.appendChild(div);
 
+            // 前回の同じ投稿IDのグラフが残っていれば破棄する
+            if (postCharts[canvasId]) {
+                postCharts[canvasId].destroy();
+            }
+
             let pData = m.portfolio || [1];
-            new Chart(document.getElementById(canvasId).getContext('2d'), {
+            // 新しいグラフを作成し、postChartsに保存しておく
+            postCharts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'doughnut',
                 data: { datasets: [{ data: pData, backgroundColor: (!m.portfolio) ? ['#eee'] : stockColors, borderWidth: 0 }] },
                 options: { cutout: '70%', responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, events: [] }
