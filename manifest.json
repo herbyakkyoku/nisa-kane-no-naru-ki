@@ -1,23 +1,25 @@
 {
-    "name": "みんなのNISA",
-    "short_name": "みんNISA",
-    "description": "NISAポートフォリオ共有SNS",
-    "start_url": "/nisa-kane-no-naru-ki/",
-    "display": "standalone",
-    "background_color": "#f0f4f8",
-    "theme_color": "#2ecc71",
-    "orientation": "portrait",
-    "icons": [
-        {
-            "src": "https://via.placeholder.com/192x192/2ecc71/ffffff?text=NISA",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "https://via.placeholder.com/512x512/2ecc71/ffffff?text=NISA",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
-    ]
+  "name": "カネノナルキ - NISA握力養成所",
+  "short_name": "カネノナルキ",
+  "description": "NISAを売らずに握り続ける修行アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f4f8",
+  "theme_color": "#2ecc71",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
