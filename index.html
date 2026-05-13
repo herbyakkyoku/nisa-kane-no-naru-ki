@@ -106,7 +106,6 @@
         .market-status.active { display: block; }
         .loss-title  { font-size: 0.75rem; color: var(--danger); font-weight: bold; margin-bottom: 4px; }
         .loss-detail { font-size: 1.2rem; color: var(--danger); font-weight: 900; }
-        .investment-label { font-size: 0.65rem; color: #777; margin-top: 4px; }
 
         .hold-button {
             background-color: var(--primary);
@@ -123,13 +122,8 @@
             box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
         }
 
-        .hold-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
+        .hold-button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
 
-        /* ── トースト通知 ── */
         #toast {
             position: fixed;
             bottom: 80px;
@@ -144,27 +138,14 @@
             pointer-events: none;
             transition: opacity 0.3s, transform 0.3s;
             z-index: 9999;
-            white-space: nowrap;
         }
 
-        #toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* ── チャット ── */
-        #chat-section {
-            border-top: 2px solid #f0f4f8;
-            margin-top: 15px;
-            padding-top: 15px;
-            text-align: left;
-        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         #chat-messages {
-            height: calc(100vh - 300px);
+            height: calc(100vh - 320px);
             overflow-y: auto;
-            padding-right: 5px;
-            padding-bottom: 120px; /* 入力エリア分の余白（margin-bottom は overflow内で効かない） */
+            padding-bottom: 100px;
         }
 
         .msg-unit {
@@ -173,248 +154,138 @@
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 12px;
+            text-align: left;
         }
 
-        .msg-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .user-name  { font-weight: bold; font-size: 0.85rem; }
         .msg-text   { font-size: 0.9rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
 
-        .msg-actions {
-            display: flex;
-            gap: 12px;
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 10px;
-        }
-
+        .msg-actions { display: flex; gap: 12px; font-size: 0.75rem; color: #666; margin-top: 10px; }
         .action-btn {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: #f8f9fa;
+            cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px;
+            border-radius: 6px; background: #f8f9fa;
         }
+        .action-icon { width: 14px; height: 14px; fill: currentColor; }
 
-        .action-icon { width: 16px; height: 16px; fill: currentColor; }
-
-        /* ── 入力エリア ── */
         .input-area {
-            position: fixed;
-            bottom: 65px;
-            left: 0;
-            width: 100%;
-            background: white;
-            padding: 10px 15px;
-            box-sizing: border-box;
-            border-top: 1px solid #eee;
-            z-index: 900;
+            position: fixed; bottom: 65px; left: 0; width: 100%;
+            background: white; padding: 10px 15px; box-sizing: border-box;
+            border-top: 1px solid #eee; z-index: 900;
         }
-
         .input-row { display: flex; gap: 8px; }
+        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        #chat-send-btn { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
 
-        #chat-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            outline: none;
-            font-size: 0.9rem;
-        }
-
-        #chat-send-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* ── ボトムナビ ── */
         .bottom-nav {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 65px;
-            background: #ffffff;
-            border-top: 1px solid #eee;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
+            display: flex; justify-content: space-around; align-items: center; height: 65px;
+            background: #ffffff; border-top: 1px solid #eee; position: fixed;
+            bottom: 0; left: 0; width: 100%; z-index: 1000;
             padding-bottom: env(safe-area-inset-bottom);
         }
-
-        .nav-icon  { width: 24px; height: 24px; fill: currentColor; margin-bottom: 2px; display: block; }
-        .nav-item  { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #888; cursor: pointer; }
         .nav-item.active { color: var(--primary); }
         .nav-label { font-size: 10px; font-weight: bold; }
+        .nav-icon-svg { width: 20px; height: 20px; fill: currentColor; margin-bottom: 2px; }
 
-        /* ── 設定モーダル ── */
         #settings-modal {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2000; display: none;
         }
-
         .modal-content {
-            position: absolute;
-            bottom: 0;
-            background: white;
-            width: 100%;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            border-radius: 30px 30px 0 0;
-            max-height: 90vh;
-            overflow-y: auto;
+            position: absolute; bottom: 0; background: white; width: 100%;
+            padding: 1.5rem; border-radius: 20px 20px 0 0; box-sizing: border-box;
         }
-
         .input-group { margin: 10px 0; text-align: left; }
-        .input-group label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 3px; font-weight: bold; }
-        .input-group input { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 0.9rem; }
+        .input-group label { display: block; font-size: 0.75rem; color: #666; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; }
 
         .hidden { display: none !important; }
-
-        /* ── オフライン通知バナー ── */
-        #offline-banner {
-            display: none;
-            background: #e74c3c;
-            color: white;
-            text-align: center;
-            padding: 6px;
-            font-size: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        #offline-banner.show { display: block; }
     </style>
 </head>
 <body>
 
-<!-- トースト通知 -->
 <div id="toast"></div>
 
 <div class="app-container">
-
-    <!-- オフライン通知バナー -->
-    <div id="offline-banner">📡 オフライン中です。操作は復帰後に反映されます。</div>
-
     <div id="user-nav" class="user-profile-nav hidden" onclick="showSettings()">
         <img id="my-icon" class="user-icon" src="" alt="user">
     </div>
 
-    <!-- ログイン画面 -->
     <div id="login-section">
         <h1 style="margin-bottom:0.5rem;">🌳 カネノナルキ</h1>
         <p style="color: #666; font-size: 0.85rem;">〜NISA握力養成所〜</p>
-        <button class="hold-button" id="btn-login" style="background-color: var(--accent);">Googleで入門する</button>
+        <button class="hold-button" id="btn-login" style="background-color: var(--accent);">Googleで修行を開始</button>
     </div>
 
-    <!-- メイン修行画面 -->
     <div id="main-content" class="hidden">
         <div id="user-badge" class="badge">🐣 ひよっこ門下生</div>
         <div id="tree-display">🌱</div>
 
         <div class="main-stats">
             <div class="stat-item"><p>修行日数</p><div id="day-count">0日</div></div>
-            <div class="stat-item"><p>累計・守護額</p><div id="saved-amount">¥0</div></div>
+            <div class="stat-item"><p>累計守護額</p><div id="saved-amount">¥0</div></div>
         </div>
 
         <div id="market-status-area" class="market-status">
-            <div class="loss-title">⚠️ 本日の暴風雨（自分へのダメージ）</div>
+            <div class="loss-title">⚠️ 今日の暴風雨（評価損）</div>
             <div id="today-loss-display" class="loss-detail">-¥0</div>
-            <div id="investment-type-label" class="investment-label">設定銘柄の合算</div>
         </div>
 
         <button class="hold-button" id="hold-btn">今日も売らなかった！</button>
-        <p style="font-size: 0.7rem; color: #999;">※売却ボタンはありません。アプリを消すまで修行です。</p>
+        <p style="font-size: 0.7rem; color: #999;">※売却ボタンはありません。消すまで修行です。</p>
     </div>
 
-    <!-- 道場（チャット）画面 -->
     <div id="chat-content" class="hidden">
-        <div id="chat-section">
-            <!--
-                flex-direction: column-reverse により、
-                最新メッセージが視覚的に下に表示される
-            -->
-            <div id="chat-messages"></div>
-            <div class="input-area">
-                <div class="input-row">
-                    <input type="text" id="chat-input" placeholder="今の心境を綴れ..." maxlength="500">
-                    <button id="chat-send-btn">送信</button>
-                </div>
-                <label style="font-size: 0.7rem; color: #888; margin-top: 5px; display: block;">
-                    <input type="checkbox" id="mask-amount-check"> 累計守護額を隠して投稿
-                </label>
+        <h3 style="margin: 0 0 10px 0; font-size: 1rem;">道場</h3>
+        <div id="chat-messages"></div>
+        <div class="input-area">
+            <div class="input-row">
+                <input type="text" id="chat-input" placeholder="今の心境を綴れ..." maxlength="200">
+                <button id="chat-send-btn">送信</button>
             </div>
+            <label style="font-size: 0.65rem; color: #888; margin-top: 5px; display: block; text-align: left;">
+                <input type="checkbox" id="mask-amount-check"> 守護額を隠す
+            </label>
         </div>
     </div>
 </div>
 
-<!-- ボトムナビ -->
 <nav class="bottom-nav hidden" id="global-nav">
     <div class="nav-item active" id="nav-main" onclick="switchTab('main')">
-        <svg class="nav-icon"><use href="#icon-home"></use></svg>
+        <svg class="nav-icon-svg"><use href="#icon-home"></use></svg>
         <span class="nav-label">修行</span>
     </div>
     <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
-        <svg class="nav-icon"><use href="#icon-chat"></use></svg>
+        <svg class="nav-icon-svg"><use href="#icon-chat"></use></svg>
         <span class="nav-label">道場</span>
     </div>
 </nav>
 
-<!-- 設定モーダル -->
 <div id="settings-modal" onclick="hideSettings()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0;">🧘 修行プラン設定</h3>
-        <p style="font-size:0.7rem; color:#888; margin-bottom:15px;">過去の投資分も入力すると、ダメージがよりリアルになります。</p>
-
-        <div style="background: #f0f7ff; padding: 12px; border-radius: 15px; margin-bottom: 12px;">
-            <label style="font-weight: bold; color: var(--accent); font-size: 0.85rem;">🌏 全世界株式 (オルカン)</label>
-            <div class="input-group">
-                <label>現在の評価額 (円)</label>
-                <input type="number" id="setting-ac-current" placeholder="既にある資産額" min="0">
-            </div>
-            <div class="input-group">
-                <label>毎月の積立額 (円)</label>
-                <input type="number" id="setting-ac-monthly" placeholder="33333" min="0">
-            </div>
+        <h3 style="margin-top:0;">🧘 修行プラン</h3>
+        <div class="input-group">
+            <label>オルカン 現在評価額(円)</label>
+            <input type="number" id="setting-ac-current" min="0">
         </div>
-
-        <div style="background: #fff9f0; padding: 12px; border-radius: 15px; margin-bottom: 15px;">
-            <label style="font-weight: bold; color: #f39c12; font-size: 0.85rem;">🇺🇸 米国株式 (S&P500)</label>
-            <div class="input-group">
-                <label>現在の評価額 (円)</label>
-                <input type="number" id="setting-sp-current" placeholder="既にある資産額" min="0">
-            </div>
-            <div class="input-group">
-                <label>毎月の積立額 (円)</label>
-                <input type="number" id="setting-sp-monthly" placeholder="50000" min="0">
-            </div>
+        <div class="input-group">
+            <label>オルカン 毎月の積立額(円)</label>
+            <input type="number" id="setting-ac-monthly" min="0">
         </div>
-
-        <button id="save-settings-btn" onclick="saveSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer;">修行内容を更新</button>
-        <button onclick="confirmLogout()" style="width:100%; padding:10px; border:none; background:none; color:#e74c3c; margin-top:10px; cursor:pointer;">ログアウト</button>
-        <button onclick="hideSettings()" style="width:100%; padding:10px; border:none; background:none; color:#999; cursor:pointer;">閉じる</button>
+        <div class="input-group">
+            <label>S&P500 現在評価額(円)</label>
+            <input type="number" id="setting-sp-current" min="0">
+        </div>
+        <div class="input-group">
+            <label>S&P500 毎月の積立額(円)</label>
+            <input type="number" id="setting-sp-monthly" min="0">
+        </div>
+        <button onclick="saveSettings()" style="width:100%; padding:15px; border-radius:30px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer;">保存</button>
+        <button onclick="confirmLogout()" style="width:100%; padding:10px; border:none; background:none; color:var(--danger); margin-top:10px; cursor:pointer;">ログアウト</button>
     </div>
 </div>
 
-<!-- SVGアイコン定義 -->
 <svg style="display: none;">
     <symbol id="icon-home" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
     <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></symbol>
@@ -422,37 +293,10 @@
 </svg>
 
 <script type="module">
-    import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged }
-                                        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast }
-                                        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // =====================================================================
-    // Firebase 初期化
-    // ⚠️ APIキーは公開リポジトリにコミットしないこと。
-    //    本番環境では環境変数 or Firebase Hosting の __firebase_config__ を利用する。
-    //    また Firestore Security Rules で以下を必ず設定する：
-    //
-    //    rules_version = '2';
-    //    service cloud.firestore {
-    //      match /databases/{database}/documents {
-    //        // ユーザー自身のデータのみ読み書き可
-    //        match /users/{uid} {
-    //          allow read, write: if request.auth != null && request.auth.uid == uid;
-    //        }
-    //        // メッセージ：認証済みユーザーのみ書き込み可
-    //        match /messages/room_0/{msgId} {
-    //          allow read: if request.auth != null;
-    //          allow create: if request.auth != null;
-    //          // いいねは自分のUIDキーのみ書き換え可
-    //          allow update: if request.auth != null
-    //            && request.resource.data.likes.keys()
-    //                .hasOnly(resource.data.likes.keys().concat([request.auth.uid]));
-    //        }
-    //      }
-    //    }
-    // =====================================================================
     const firebaseConfig = {
         apiKey:        "AIzaSyALG070NijPZ0U5RdfMXF_4dIJrEoFELqY",
         authDomain:    "nisa-kane-no-naru-ki.firebaseapp.com",
@@ -461,43 +305,43 @@
         appId:         "1:466336366620:web:7fd41d4742cfbc56fc5fd9"
     };
 
-    const app      = initializeApp(firebaseConfig);
-    const db       = getDatabase(app);
-    const auth     = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // =====================================================================
-    // グローバル状態（最小限に抑える）
-    // userData は onValue リスナーで常に最新を保持する
-    // =====================================================================
-    let currentUser  = null;
-    let userData     = null;
-    let marketRates  = { 'all-country': 1.0, 'sp500': 1.0 };
+    let currentUser = null;
+    let userData = null;
+    let marketRates = { 'all-country': 1.0, 'sp500': 1.0 };
 
-    // 設定の一時保存（モーダルを閉じた際に差分を検出するため）
-    let pendingSettings = null;
-
-    // =====================================================================
-    // オフライン検知
-    // =====================================================================
-    const offlineBanner = document.getElementById('offline-banner');
-
-    window.addEventListener('online',  () => offlineBanner.classList.remove('show'));
-    window.addEventListener('offline', () => offlineBanner.classList.add('show'));
-
-    // =====================================================================
-    // トースト通知ユーティリティ
-    // =====================================================================
-    function showToast(msg, duration = 2500) {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), duration);
+    // --- ユーティリティ ---
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
     }
 
-    // =====================================================================
-    // タブ切り替え
-    // =====================================================================
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function getBadgeInfo(days) {
+        const d = Number(days) || 0;
+        if (d >= 100) return { name: "伝説", emoji: "🏆" };
+        if (d >= 50)  return { name: "金剛不壊", emoji: "🦾" };
+        if (d >= 30)  return { name: "熟練", emoji: "🥋" };
+        if (d >= 7)   return { name: "一人前", emoji: "⚔️" };
+        return { name: "ひよっこ", emoji: "🐣" };
+    }
+
+    function getTodayJST() {
+        const d = new Date();
+        const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+        return jst.toISOString().split('T')[0];
+    }
+
+    // --- タブ切り替え ---
     window.switchTab = (tab) => {
         document.getElementById('main-content').classList.toggle('hidden', tab !== 'main');
         document.getElementById('chat-content').classList.toggle('hidden', tab !== 'chat');
@@ -505,376 +349,173 @@
         document.getElementById('nav-chat').classList.toggle('active', tab === 'chat');
     };
 
-    // =====================================================================
-    // 設定モーダル
-    // =====================================================================
-    window.showSettings = () => {
-        // 現在の値をフォームに反映
-        document.getElementById('setting-ac-current').value = userData?.ac_current || 0;
-        document.getElementById('setting-ac-monthly').value = userData?.ac_monthly || 0;
-        document.getElementById('setting-sp-current').value = userData?.sp_current || 0;
-        document.getElementById('setting-sp-monthly').value = userData?.sp_monthly || 0;
-
-        // 一時保存をリセット
-        pendingSettings = null;
-
-        document.getElementById('settings-modal').style.display = 'block';
-    };
-
-    // 変更の有無を確認してからモーダルを閉じる
-    window.hideSettings = () => {
-        // フォーム入力値を取得
-        const current = {
-            ac_current:  parseInt(document.getElementById('setting-ac-current').value)  || 0,
-            ac_monthly:  parseInt(document.getElementById('setting-ac-monthly').value)  || 0,
-            sp_current:  parseInt(document.getElementById('setting-sp-current').value)  || 0,
-            sp_monthly:  parseInt(document.getElementById('setting-sp-monthly').value)  || 0,
-        };
-
-        const original = {
-            ac_current:  userData?.ac_current  || 0,
-            ac_monthly:  userData?.ac_monthly  || 0,
-            sp_current:  userData?.sp_current  || 0,
-            sp_monthly:  userData?.sp_monthly  || 0,
-        };
-
-        const hasChanges = Object.keys(current).some(k => current[k] !== original[k]);
-
-        // 未保存の変更があれば確認ダイアログを出す
-        if (hasChanges && !confirm('変更が保存されていません。閉じますか？')) return;
-
-        document.getElementById('settings-modal').style.display = 'none';
-    };
-
-    // 設定保存
-    window.saveSettings = async () => {
-        const btn = document.getElementById('save-settings-btn');
-        btn.disabled = true;
-        btn.textContent = '保存中...';
-
-        const updates = {
-            ac_current: parseInt(document.getElementById('setting-ac-current').value) || 0,
-            ac_monthly: parseInt(document.getElementById('setting-ac-monthly').value) || 0,
-            sp_current: parseInt(document.getElementById('setting-sp-current').value) || 0,
-            sp_monthly: parseInt(document.getElementById('setting-sp-monthly').value) || 0,
-        };
-
-        try {
-            // Security Rules により、自分のUIDのデータのみ書き込める
-            await update(ref(db, 'users/' + currentUser.uid), updates);
-            showToast('✅ 修行プランを更新しました');
-            document.getElementById('settings-modal').style.display = 'none';
-        } catch (err) {
-            console.error('設定保存エラー:', err);
-            showToast('❌ 保存に失敗しました。再試行してください。');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = '修行内容を更新';
-        }
-    };
-
-    // ログアウト確認
-    window.confirmLogout = async () => {
-        if (!confirm('本当にログアウトしますか？修行記録はクラウドに保存されています。')) return;
-        await auth.signOut();
-        location.reload();
-    };
-
-    // =====================================================================
-    // バッジ定義
-    // =====================================================================
-    function getBadgeInfo(days) {
-        if (days >= 100) return { name: "伝説の投資家",   emoji: "🏆" };
-        if (days >= 50)  return { name: "鉄の握力",       emoji: "🦾" };
-        if (days >= 30)  return { name: "熟練門下生",     emoji: "🥋" };
-        if (days >= 7)   return { name: "一人前門下生",   emoji: "⚔️" };
-        return                  { name: "ひよっこ門下生", emoji: "🐣" };
-    }
-
-    // =====================================================================
-    // 認証状態の監視
-    // =====================================================================
+    // --- 認証 & データ同期 ---
     onAuthStateChanged(auth, user => {
         if (user) {
             currentUser = user;
-
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('global-nav').classList.remove('hidden');
             document.getElementById('user-nav').classList.remove('hidden');
             document.getElementById('my-icon').src = user.photoURL || '';
 
-            // 相場レートをリアルタイムで監視
-            onValue(ref(db, 'market/rates'), (snap) => {
-                if (snap.exists()) {
-                    marketRates = snap.val();
-                    if (userData) updateUI();
-                }
+            // 相場監視
+            onValue(ref(db, 'market/rates'), snap => {
+                if (snap.exists()) marketRates = snap.val();
+                if (userData) updateUI();
             });
 
-            // ユーザーデータをリアルタイムで監視（複数タブ対応）
-            subscribeUserData();
+            // ユーザーデータ監視
+            onValue(ref(db, `users/${user.uid}`), snap => {
+                userData = snap.val() || { days: 0, totalResistedLoss: 0 };
+                updateUI();
+            });
+
             initChat();
             switchTab('main');
         } else {
             currentUser = null;
             document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('global-nav').classList.add('hidden');
-            document.getElementById('main-content').classList.add('hidden');
         }
     });
 
-    // =====================================================================
-    // ユーザーデータのリアルタイム購読
-    // onValue を使うことで複数タブ・デバイス間の状態差異を防ぐ
-    // =====================================================================
-    function subscribeUserData() {
-        onValue(ref(db, 'users/' + currentUser.uid), (snap) => {
-            userData = snap.val() || {
-                days: 0,
-                lastPressed: null,
-                totalResistedLoss: 0,
-                ac_current: 0,
-                ac_monthly: 0,
-                sp_current: 0,
-                sp_monthly: 0
-            };
-            updateUI();
-        });
-    }
-
-    // =====================================================================
-    // ダメージ計算ロジック
-    //
-    // ※ 日割り積立は概算計算です（実際の積立日に依存しない簡易モデル）。
-    //    相場レートは Firebase の market/rates から取得した当日の変動率です。
-    // =====================================================================
-    function calculateTodayTotalLoss() {
-        if (!userData) return 0;
-        const days = userData.days || 0;
-
-        // オルカン：元本 + 日割り積立額
-        const acBase = (userData.ac_current || 0) + ((userData.ac_monthly || 0) / 30 * days);
-        const acRate = marketRates['all-country'] || 1.0;
-        const acLoss = acRate < 1.0 ? acBase * (1.0 - acRate) : 0;
-
-        // S&P500：元本 + 日割り積立額
-        const spBase = (userData.sp_current || 0) + ((userData.sp_monthly || 0) / 30 * days);
-        const spRate = marketRates['sp500'] || 1.0;
-        const spLoss = spRate < 1.0 ? spBase * (1.0 - spRate) : 0;
-
-        return Math.floor(acLoss + spLoss);
-    }
-
-    // =====================================================================
-    // UI 更新
-    // =====================================================================
+    // --- UI更新 ---
     function updateUI() {
-        const days     = userData.days || 0;
-        const b        = getBadgeInfo(days);
-        const todayLoss = calculateTodayTotalLoss();
+        if (!userData) return;
+        const days = Number(userData.days) || 0;
+        const b = getBadgeInfo(days);
+        const loss = calculateTodayLoss();
 
-        document.getElementById('day-count').innerText    = days + "日";
-        document.getElementById('user-badge').innerText   = b.emoji + " " + b.name;
-        document.getElementById('saved-amount').innerText = "¥" + (userData.totalResistedLoss || 0).toLocaleString();
+        document.getElementById('day-count').innerText = `${days}日`;
+        document.getElementById('user-badge').innerText = `${b.emoji} ${b.name}門下生`;
+        document.getElementById('saved-amount').innerText = `¥${(userData.totalResistedLoss || 0).toLocaleString()}`;
 
         const statusArea = document.getElementById('market-status-area');
-        if (todayLoss > 0) {
-            document.getElementById('today-loss-display').innerText = `-¥${todayLoss.toLocaleString()}`;
+        if (loss > 0) {
+            document.getElementById('today-loss-display').innerText = `-¥${loss.toLocaleString()}`;
             statusArea.classList.add('active');
         } else {
             statusArea.classList.remove('active');
         }
 
-        const trees = ["🌱", "🌿", "🌲", "🌳", "💹"];
-        document.getElementById('tree-display').innerText = trees[Math.min(Math.floor(days / 10), 4)];
-
-        // ── 連続押し防止の改善 ──────────────────────────────────────────
-        // 旧: new Date().toDateString() → ブラウザのローカル時刻・タイムゾーンに依存
-        // 新: JST（UTC+9）で日付文字列を生成し、サーバー保存値と比較
-        const todayJST = getTodayJST();
-        document.getElementById('hold-btn').disabled = (userData.lastPressed === todayJST);
-
-        // メイン画面を表示（初回ログイン後に hidden が残る場合への対応）
-        document.getElementById('main-content').classList.remove('hidden');
+        const treeIcons = ["🌱", "🌿", "🌲", "🌳", "💹"];
+        document.getElementById('tree-display').innerText = treeIcons[Math.min(Math.floor(days / 10), 4)];
+        document.getElementById('hold-btn').disabled = (userData.lastPressed === getTodayJST());
     }
 
-    // =====================================================================
-    // JST（日本標準時）の今日の日付文字列を返す
-    // 例: "2025-07-10"
-    // =====================================================================
-    function getTodayJST() {
-        const now   = new Date();
-        // UTC + 9h = JST
-        const jst   = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-        const y     = jst.getUTCFullYear();
-        const m     = String(jst.getUTCMonth() + 1).padStart(2, '0');
-        const d     = String(jst.getUTCDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+    function calculateTodayLoss() {
+        if (!userData) return 0;
+        const acBase = (Number(userData.ac_current) || 0) + ((Number(userData.ac_monthly) || 0) / 30 * (userData.days || 0));
+        const acLoss = marketRates['all-country'] < 1 ? acBase * (1 - marketRates['all-country']) : 0;
+        const spBase = (Number(userData.sp_current) || 0) + ((Number(userData.sp_monthly) || 0) / 30 * (userData.days || 0));
+        const spLoss = marketRates['sp500'] < 1 ? spBase * (1 - marketRates['sp500']) : 0;
+        return Math.floor(acLoss + spLoss);
     }
 
-    // =====================================================================
-    // 今日も売らなかった！ボタン
-    // =====================================================================
+    // --- アクション ---
     document.getElementById('hold-btn').onclick = async () => {
-        const btn = document.getElementById('hold-btn');
-        btn.disabled = true;
-
-        try {
-            const todayLoss  = calculateTodayTotalLoss();
-            const newDays    = (userData.days || 0) + 1;
-            const newTotalLoss = (userData.totalResistedLoss || 0) + todayLoss;
-            const todayJST   = getTodayJST();
-
-            // lastPressed に JST 日付文字列を保存（タイムゾーン依存を排除）
-            await update(ref(db, 'users/' + currentUser.uid), {
-                days:              newDays,
-                totalResistedLoss: newTotalLoss,
-                lastPressed:       todayJST
-            });
-
-            // ツリーアニメーション
-            const tree = document.getElementById('tree-display');
-            tree.classList.add('bounce-animation');
-            setTimeout(() => tree.classList.remove('bounce-animation'), 600);
-
-            showToast('🌱 今日も握力を鍛えた！');
-        } catch (err) {
-            console.error('ボタン押下エラー:', err);
-            showToast('❌ 記録に失敗しました。通信を確認してください。');
-            // onValue リスナーが再度 updateUI を呼ぶのでボタン状態は自動回復する
-        }
-        // ボタン状態は subscribeUserData → updateUI で自動的に更新される
+        const loss = calculateTodayLoss();
+        await update(ref(db, `users/${currentUser.uid}`), {
+            days: (userData.days || 0) + 1,
+            totalResistedLoss: (userData.totalResistedLoss || 0) + loss,
+            lastPressed: getTodayJST()
+        });
+        const tree = document.getElementById('tree-display');
+        tree.classList.add('bounce-animation');
+        setTimeout(() => tree.classList.remove('bounce-animation'), 600);
+        showToast('🌱 握力が1上がった！');
     };
 
-    // =====================================================================
-    // チャット初期化
-    // =====================================================================
-    let chatInitialized = false;
-
+    // --- チャットロジック ---
+    let chatLoaded = false;
     function initChat() {
-        if (chatInitialized) return;
-        chatInitialized = true;
-
-        onValue(query(ref(db, `messages/room_0`), limitToLast(50)), (snap) => {
+        if (chatLoaded) return;
+        chatLoaded = true;
+        onValue(query(ref(db, 'messages/room_0'), limitToLast(30)), snap => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = "";
-
-            // 古い順 → push、最新を上に表示したいので reverse()
-            const messages = [];
-            snap.forEach(child => messages.push({ id: child.key, ...child.val() }));
-            messages.reverse().forEach(msg => renderMsg(msg.id, msg, container));
+            const list = [];
+            snap.forEach(child => { list.push({ id: child.key, ...child.val() }); });
+            list.reverse().forEach(m => renderMsg(m, container));
         });
     }
 
-    // =====================================================================
-    // メッセージ描画
-    // =====================================================================
-    function renderMsg(id, msg, container) {
-        const div = document.createElement('div');
-        div.className = 'msg-unit';
-        const b     = getBadgeInfo(msg.days || 0);
-        const likes = msg.likes ? Object.keys(msg.likes).length : 0;
+    function renderMsg(m, container) {
+        try {
+            const div = document.createElement('div');
+            div.className = 'msg-unit';
+            const d = Number(m.days) || 0;
+            const b = getBadgeInfo(d);
+            const likesCount = m.likes ? Object.keys(m.likes).length : 0;
 
-        // XSS 対策：innerHTML に直接ユーザー入力を埋め込まない
-        const nameEl    = document.createElement('span');
-        nameEl.className = 'user-name';
-        nameEl.textContent = msg.name;  // textContent で安全にエスケープ
+            div.innerHTML = `
+                <div class="msg-header">
+                    <div>
+                        <span class="user-name">${escapeHtml(m.name)}</span>
+                        <span style="font-size:0.6rem; color:var(--accent);"> ${b.emoji}${d}日目</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:#999;">
+                        ${m.isAmountHidden ? '¥****' : `守護額: ¥${(Number(m.amount) || 0).toLocaleString()}`}
+                    </div>
+                </div>
+                <div class="msg-text">${escapeHtml(m.text)}</div>
+            `;
 
-        const badgeEl   = document.createElement('span');
-        badgeEl.style   = 'font-size:0.6rem; color:var(--accent);';
-        badgeEl.textContent = ` ${b.emoji}${msg.days}日目`;
-
-        const amountEl  = document.createElement('div');
-        amountEl.style  = 'font-size:0.7rem; color:#999;';
-        amountEl.textContent = msg.isAmountHidden ? '¥****' : `守護額: ¥${(msg.amount || 0).toLocaleString()}`;
-
-        const headerEl  = document.createElement('div');
-        headerEl.className = 'msg-header';
-        const headerLeft = document.createElement('div');
-        headerLeft.appendChild(nameEl);
-        headerLeft.appendChild(badgeEl);
-        headerEl.appendChild(headerLeft);
-        headerEl.appendChild(amountEl);
-
-        const textEl    = document.createElement('div');
-        textEl.className = 'msg-text';
-        textEl.textContent = msg.text;  // textContent で安全にエスケープ
-
-        const likeBtn   = document.createElement('span');
-        likeBtn.className = 'action-btn';
-        likeBtn.innerHTML = `<svg class="action-icon"><use href="#icon-like"></use></svg>${likes}`;
-        likeBtn.onclick  = () => handleReaction('likes', id);
-
-        const actionsEl = document.createElement('div');
-        actionsEl.className = 'msg-actions';
-        actionsEl.appendChild(likeBtn);
-
-        div.appendChild(headerEl);
-        div.appendChild(textEl);
-        div.appendChild(actionsEl);
-        container.appendChild(div);
+            const actions = document.createElement('div');
+            actions.className = 'msg-actions';
+            const likeBtn = document.createElement('div');
+            likeBtn.className = 'action-btn';
+            likeBtn.innerHTML = `<svg class="action-icon"><use href="#icon-like"></use></svg> <span>${likesCount}</span>`;
+            likeBtn.onclick = () => handleReaction(m.id);
+            
+            actions.appendChild(likeBtn);
+            div.appendChild(actions);
+            container.appendChild(div);
+        } catch (e) { console.error("Msg Render Error", e); }
     }
 
-    // =====================================================================
-    // メッセージ送信
-    // =====================================================================
+    window.handleReaction = async (msgId) => {
+        const rRef = ref(db, `messages/room_0/${msgId}/likes/${currentUser.uid}`);
+        const snap = await get(rRef);
+        await set(rRef, snap.exists() ? null : true);
+    };
+
     document.getElementById('chat-send-btn').onclick = async () => {
         const input = document.getElementById('chat-input');
-        const text  = input.value.trim();
+        const text = input.value.trim();
         if (!text) return;
-
-        const btn = document.getElementById('chat-send-btn');
-        btn.disabled = true;
-
-        try {
-            await push(ref(db, 'messages/room_0'), {
-                name:           currentUser.displayName,
-                text:           text,
-                days:           userData.days,
-                amount:         userData.totalResistedLoss || 0,
-                isAmountHidden: document.getElementById('mask-amount-check').checked,
-                timestamp:      serverTimestamp()
-            });
-            input.value = '';
-        } catch (err) {
-            console.error('送信エラー:', err);
-            showToast('❌ 送信に失敗しました。');
-        } finally {
-            btn.disabled = false;
-        }
+        await push(ref(db, 'messages/room_0'), {
+            name: currentUser.displayName,
+            text: text,
+            days: userData.days || 0,
+            amount: userData.totalResistedLoss || 0,
+            isAmountHidden: document.getElementById('mask-amount-check').checked,
+            timestamp: serverTimestamp()
+        });
+        input.value = "";
     };
 
-    // Enterキーでも送信
-    document.getElementById('chat-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            document.getElementById('chat-send-btn').click();
-        }
-    });
-
-    // =====================================================================
-    // いいね処理
-    // Security Rules 側で「自分のUID以外のキーを操作できない」制約が必要。
-    // クライアント側では自分のUIDキーのみを操作する。
-    // =====================================================================
-    window.handleReaction = async (type, id) => {
-        if (!currentUser) return;
-        // パス: messages/room_0/{msgId}/likes/{myUid}
-        // Security Rules: request.auth.uid == $uid で書き込み制限
-        const rRef = ref(db, `messages/room_0/${id}/${type}/${currentUser.uid}`);
-        try {
-            const snap = await get(rRef);
-            await set(rRef, snap.exists() ? null : true);
-        } catch (err) {
-            console.error('リアクションエラー:', err);
-            showToast('❌ リアクションに失敗しました。');
-        }
+    // --- 設定 ---
+    window.showSettings = () => {
+        document.getElementById('setting-ac-current').value = userData.ac_current || 0;
+        document.getElementById('setting-ac-monthly').value = userData.ac_monthly || 0;
+        document.getElementById('setting-sp-current').value = userData.sp_current || 0;
+        document.getElementById('setting-sp-monthly').value = userData.sp_monthly || 0;
+        document.getElementById('settings-modal').style.display = 'block';
     };
-
-    // =====================================================================
-    // Googleログイン
-    // =====================================================================
-    document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
+    window.hideSettings = () => document.getElementById('settings-modal').style.display = 'none';
+    window.saveSettings = async () => {
+        await update(ref(db, `users/${currentUser.uid}`), {
+            ac_current: parseInt(document.getElementById('setting-ac-current').value) || 0,
+            ac_monthly: parseInt(document.getElementById('setting-ac-monthly').value) || 0,
+            sp_current: parseInt(document.getElementById('setting-sp-current').value) || 0,
+            sp_monthly: parseInt(document.getElementById('setting-sp-monthly').value) || 0,
+        });
+        hideSettings();
+        showToast('✅ 設定を更新しました');
+    };
+    window.confirmLogout = () => { if(confirm('ログアウトしますか？')) auth.signOut().then(() => location.reload()); };
+    window.btn_login = () => signInWithPopup(auth, provider);
+    document.getElementById('btn-login').onclick = window.btn_login;
 
 </script>
 </body>
