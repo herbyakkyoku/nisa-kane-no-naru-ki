@@ -161,14 +161,10 @@
         }
 
         #chat-messages {
-            /* calc の依存をやめ flex で高さを決める */
-            height: 60vh;
+            height: calc(100vh - 300px);
             overflow-y: auto;
-            display: flex;
-            flex-direction: column-reverse; /* 最新メッセージが下に来る */
-            gap: 12px;
             padding-right: 5px;
-            margin-bottom: 100px;
+            padding-bottom: 120px; /* 入力エリア分の余白（margin-bottom は overflow内で効かない） */
         }
 
         .msg-unit {
@@ -176,6 +172,7 @@
             border: 1px solid #eee;
             border-radius: 12px;
             padding: 12px;
+            margin-bottom: 12px;
         }
 
         .msg-header {
@@ -752,20 +749,20 @@
     // =====================================================================
     // チャット初期化
     // =====================================================================
-    let chatInitialized = false;  // ← 追加
+    let chatInitialized = false;
 
-function initChat() {
-    if (chatInitialized) return;  // ← 追加：2回目以降は何もしない
-    chatInitialized = true;       // ← 追加
+    function initChat() {
+        if (chatInitialized) return;
+        chatInitialized = true;
+
         onValue(query(ref(db, `messages/room_0`), limitToLast(50)), (snap) => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = "";
 
-            // column-reverse レイアウト用：DOM追加順序は「古い→新しい」のまま
-            // CSS の flex-direction: column-reverse が視覚的に逆転させる
+            // 古い順 → push、最新を上に表示したいので reverse()
             const messages = [];
             snap.forEach(child => messages.push({ id: child.key, ...child.val() }));
-            messages.forEach(msg => renderMsg(msg.id, msg, container));
+            messages.reverse().forEach(msg => renderMsg(msg.id, msg, container));
         });
     }
 
